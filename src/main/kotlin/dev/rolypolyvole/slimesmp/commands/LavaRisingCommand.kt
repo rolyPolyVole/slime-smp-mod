@@ -29,6 +29,11 @@ class LavaRisingCommand {
         val source = context.source
         val player = source.playerOrException
 
+        if (source.textName.startsWith(".")) {
+            source.sendFailure(Component.literal("Lava Rising does not support Bedrock yet.").withColor(0xFF5555))
+            return 0
+        }
+
         source.sendSuccess({ Component.literal("Sending you to Lava Rising!").withColor(0x55FF55) }, false)
 
         player.connection.send(
