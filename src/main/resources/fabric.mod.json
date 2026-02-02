@@ -1,0 +1,33 @@
+{
+    "schemaVersion": 1,
+    "id": "slime-smp-mod",
+    "version": "${version}",
+    "name": "SlimeSMPMod",
+    "description": "",
+    "authors": [],
+    "contact": {},
+    "license": "All-Rights-Reserved",
+    "icon": "assets/slime-smp-mod/icon.png",
+    "environment": "server",
+    "entrypoints": {
+        "fabric-datagen": [
+            "dev.rolypolyvole.slimesmp.client.SlimeSMPModDataGenerator"
+        ],
+        "server": [
+            "dev.rolypolyvole.slimesmp.SlimeSMPMod"
+        ]
+    },
+    "mixins": [
+        "slime-smp-mod.mixins.json",
+        {
+            "config": "slime-smp-mod.client.mixins.json",
+            "environment": "client"
+        }
+    ],
+    "depends": {
+        "fabricloader": ">=${loader_version}",
+        "fabric-language-kotlin": ">=${kotlin_loader_version}",
+        "fabric-api": "*",
+        "minecraft": "${minecraft_version}"
+    }
+}
