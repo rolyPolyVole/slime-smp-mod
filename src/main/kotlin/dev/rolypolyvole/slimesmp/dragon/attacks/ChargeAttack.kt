@@ -1,13 +1,16 @@
 package dev.rolypolyvole.slimesmp.dragon.attacks
 
-import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.*
 import net.minecraft.world.phys.Vec3
 
 class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
-    private val phase: DragonPhaseInstance get() = dragon.phaseManager.currentPhase
-    private var target: Vec3? = null
+    private val phase: DragonPhaseInstance
+        get() = dragon.phaseManager.currentPhase
+
+    private var target: ServerPlayer? = null
+    private var targetLocation: Vec3? = null
     private var prepareTicks = 0
 
     override fun tick() {
@@ -16,9 +19,10 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
     override fun beforeMove() {
         if (prepareTicks < 20) return
-        if (target == null) return
+        if (prepareTicks == 20) this.targetLocation = this.getTargetLocation()
+        if (target == null || target!!.hasDisconnected()) return
 
-        val to = target!!.subtract(dragon.position())
+        val to = targetLocation!!.subtract(dragon.position())
         if (to.lengthSqr() < 1e-6) return
 
         val movement = to.normalize()
@@ -44,15 +48,16 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     }
 
     override fun start() {
-        val target = dragon.level().players()
+        this.target = dragon.level().players()
+            .map { it as ServerPlayer }
             .filter { !it.isCreative && !it.isSpectator && it.isAlive }
             .filter { it.position().distanceToSqr(dragon.position()) in 900.0..22500.0 }
             .randomOrNull() ?: return
 
-        this.target = target.position()
+        this.targetLocation = this.getTargetLocation()
 
         dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
-        dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(this.target!!)
+        dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(targetLocation!!)
     }
 
     override fun end() {
@@ -60,4 +65,11 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     }
 
     override fun getStartDelayTicks(): Int = (12..20).random() * 20
+
+    private fun getTargetLocation(): Vec3 {
+        val dragonPos = dragon.position()
+        val followThrough = target!!.position().subtract(dragonPos).normalize().scale(8.0)
+
+        return target!!.position().add(followThrough)
+    }
 }
