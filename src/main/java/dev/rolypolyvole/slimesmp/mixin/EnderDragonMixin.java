@@ -1,0 +1,145 @@
+package dev.rolypolyvole.slimesmp.mixin;
+
+import dev.rolypolyvole.slimesmp.dragon.DragonAttackManager;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhaseManager;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.level.Level;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.List;
+
+@Mixin(EnderDragon.class)
+@SuppressWarnings("unused")
+abstract class EnderDragonMixin extends Mob implements Enemy {
+    @Final @Shadow
+    private EnderDragonPhaseManager phaseManager;
+    @Final @Shadow
+    private EnderDragonPart body;
+
+    @Unique
+    private DragonAttackManager attackManager;
+
+    protected EnderDragonMixin(EntityType<? extends Mob> entityType, Level level) {
+        super(entityType, level);
+    }
+
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void onInit(EntityType<? extends EnderDragon> entityType, Level level, CallbackInfo ci) {
+        double playerCount = Math.max(level.players().size(), 1);
+        double health = 800.0 + 700 * Math.sqrt(playerCount - 1);
+
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
+        this.setHealth((float) health);
+
+        this.attackManager = new DragonAttackManager(self());
+    }
+
+    @Unique
+    private EnderDragon self() {
+        return (EnderDragon)(Object)this;
+    }
+
+    @Inject(method = "aiStep()V", at = @At("TAIL"))
+    private void tick(CallbackInfo info) {
+        if (this.level().isClientSide()) return;
+        if (attackManager != null) attackManager.tick();
+    }
+
+    @Inject(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V", shift = At.Shift.BEFORE))
+    private void beforeMove(CallbackInfo info) {
+        if (this.level().isClientSide()) return;
+        if (attackManager != null) attackManager.onBeforeMove();
+    }
+
+    @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Ljava/util/List;)V", at = @At("HEAD"), cancellable = true)
+    private void headAttack(ServerLevel serverLevel, List<Entity> list, CallbackInfo info) {
+        float damage = 14.0F;
+
+        for (Entity entity : list) {
+            if (entity instanceof LivingEntity) {
+                DamageSource damageSource = this.damageSources().mobAttack(this);
+                entity.hurtServer(serverLevel, damageSource, damage);
+                EnchantmentHelper.doPostAttackEffects(serverLevel, entity, damageSource);
+            }
+        }
+
+        info.cancel();
+    }
+
+    @Inject(method = "knockBack", at = @At("HEAD"), cancellable = true)
+    private void wingAttack(ServerLevel serverLevel, List<Entity> list, CallbackInfo info) {
+        float damage = 8.0F;
+
+        double centerX = (this.body.getBoundingBox().minX + this.body.getBoundingBox().maxX) / 2.0;
+        double centerZ = (this.body.getBoundingBox().minZ + this.body.getBoundingBox().maxZ) / 2.0;
+
+        for (Entity entity : list) {
+            if (entity instanceof LivingEntity livingEntity) {
+                double dx = entity.getX() - centerX;
+                double dz = entity.getZ() - centerZ;
+                double distanceSqr = Math.max(dx * dx + dz * dz, 0.1);
+                double yVelocity = 0.2F;
+
+                entity.push(dx / distanceSqr * 4.0, yVelocity, dz / distanceSqr * 4.0);
+
+                boolean isSitting = this.phaseManager.getCurrentPhase().isSitting();
+                boolean onCooldown = livingEntity.getLastHurtByMobTimestamp() >= entity.tickCount - 2;
+
+                if (!isSitting && !onCooldown) {
+                    DamageSource damageSource = this.damageSources().mobAttack(this);
+                    entity.hurtServer(serverLevel, damageSource, damage);
+                    EnchantmentHelper.doPostAttackEffects(serverLevel, entity, damageSource);
+                }
+            }
+        }
+
+        info.cancel();
+    }
+
+    @Redirect(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/phases/DragonPhaseInstance;getFlySpeed()F"))
+    private float getFlySpeed(DragonPhaseInstance instance) {
+        float original = Math.max(1.0F, instance.getFlySpeed());
+
+        if (instance.getPhase() == EnderDragonPhase.CHARGING_PLAYER) {
+            return original * 2.4F;
+        } else {
+            return original * 1.6F;
+        }
+    }
+
+    @Redirect(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/phases/DragonPhaseInstance;getTurnSpeed()F"))
+    private float getTurnSpeed(DragonPhaseInstance instance) {
+        float original = instance.getTurnSpeed();
+
+        if (instance.getPhase() == EnderDragonPhase.CHARGING_PLAYER) {
+            return original * 5.0F;
+        } else {
+            return original * 2.0F;
+        }
+    }
+
+    @ModifyConstant(method = "aiStep()V", constant = @org.spongepowered.asm.mixin.injection.Constant(floatValue = 0.06F))
+    private float forwardMovement(float original) {
+        return original * 1.6F;
+    }
+}
