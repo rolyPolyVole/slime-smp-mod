@@ -1,14 +1,13 @@
 package dev.rolypolyvole.slimesmp.dragon.attacks
 
+import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.*
 import net.minecraft.world.phys.Vec3
+import kotlin.reflect.KClass
 
 class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
-    private val phase: DragonPhaseInstance
-        get() = dragon.phaseManager.currentPhase
-
     private var target: ServerPlayer? = null
     private var targetLocation: Vec3? = null
     private var prepareTicks = 0
@@ -35,13 +34,13 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         return 2.5F
     }
 
-    override fun canStart(lastAttack: AbstractDragonAttack?): Boolean {
-        return phase !is DragonChargePlayerPhase &&
-                phase !is DragonLandingApproachPhase &&
-                phase !is DragonLandingPhase &&
-                phase !is DragonDeathPhase &&
-                phase !is AbstractDragonSittingPhase
-    }
+    override fun invalidPhases(): List<KClass<out DragonPhaseInstance>> = listOf(
+        DragonChargePlayerPhase::class,
+        DragonLandingApproachPhase::class,
+        DragonLandingPhase::class,
+        DragonDeathPhase::class,
+        AbstractDragonSittingPhase::class
+    )
 
     override fun shouldEnd(): Boolean {
         return phase !is DragonChargePlayerPhase
@@ -49,18 +48,21 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
     override fun start() {
         this.target = dragon.level().players()
-            .map { it as ServerPlayer }
             .filter { !it.isCreative && !it.isSpectator && it.isAlive }
             .filter { it.position().distanceToSqr(dragon.position()) in 900.0..22500.0 }
+            .map { it as ServerPlayer }
             .randomOrNull() ?: return
 
         this.targetLocation = this.getTargetLocation()
 
         dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
         dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(targetLocation!!)
+
+        dragon.level().players().forEach { it.displayClientMessage(Component.literal("start dragon charge"), false) }
     }
 
     override fun end() {
+        dragon.level().players().forEach { it.displayClientMessage(Component.literal("stop dragon charge"), false) }
         return
     }
 
