@@ -27,6 +27,10 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         dragon.deltaMovement = movement.scale(speed)
     }
 
+    override fun getTurnSpeedMultiplier(): Float {
+        return 2.5F
+    }
+
     override fun canStart(lastAttack: AbstractDragonAttack?): Boolean {
         return phase !is DragonChargePlayerPhase &&
                 phase !is DragonLandingApproachPhase &&
@@ -42,19 +46,16 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     override fun start() {
         val target = dragon.level().players()
             .filter { !it.isCreative && !it.isSpectator && it.isAlive }
-            .filter { it.position().distanceToSqr(dragon.position()) in 400.0..22500.0 }
+            .filter { it.position().distanceToSqr(dragon.position()) in 900.0..22500.0 }
             .randomOrNull() ?: return
 
         this.target = target.position()
 
         dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
         dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(this.target!!)
-
-        dragon.level().server!!.playerList.broadcastSystemMessage(Component.literal("Dragon is charging towards player"), false)
     }
 
     override fun end() {
-        dragon.level().server!!.playerList.broadcastSystemMessage(Component.literal("Dragon finished charging attack"), false)
         return
     }
 

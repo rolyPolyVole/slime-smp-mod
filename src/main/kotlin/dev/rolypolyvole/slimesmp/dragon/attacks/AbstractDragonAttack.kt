@@ -6,6 +6,9 @@ abstract class AbstractDragonAttack(protected val dragon: EnderDragon) {
     abstract fun tick()
     open fun beforeMove() {}
 
+    open fun getSpeedMultiplier(): Float = 1.0f
+    open fun getTurnSpeedMultiplier(): Float = 1.0f
+
     open fun canStart(lastAttack: AbstractDragonAttack?): Boolean = true
     open fun shouldEnd(): Boolean = false
 

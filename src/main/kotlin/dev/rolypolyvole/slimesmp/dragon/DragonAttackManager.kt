@@ -15,6 +15,11 @@ class DragonAttackManager(private val dragon: EnderDragon) {
 
     private var ticksUntilNextAttack: Int = 0
 
+    val speedMultiplier: Float
+        get() = currentAttack?.getSpeedMultiplier() ?: 1.0F
+    val turnSpeedMultiplier: Float
+        get() = currentAttack?.getTurnSpeedMultiplier() ?: 1.0F
+
     fun tick() {
         currentAttack?.let {
             it.tick()
