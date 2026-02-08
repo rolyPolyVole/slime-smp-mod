@@ -25,6 +25,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
@@ -35,6 +36,17 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     private EnderDragonPhaseManager phaseManager;
     @Final @Shadow
     private EnderDragonPart body;
+
+    @Shadow
+    protected abstract void reallyHurt(ServerLevel serverLevel, DamageSource damageSource, float f);
+
+    @Shadow
+    @Final
+    public EnderDragonPart head;
+    @Unique
+    private EnderDragonPart hitPart;
+    @Unique
+    private float damageReceived;
 
     @Unique
     private DragonAttackManager attackManager;
@@ -114,6 +126,23 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
         }
 
         info.cancel();
+    }
+
+    @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z", at = @At("HEAD"))
+    private void storeDamageData(ServerLevel level, EnderDragonPart part, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        this.hitPart = part;
+        this.damageReceived = amount;
+    }
+
+    @Redirect(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;reallyHurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/damagesource/DamageSource;F)V"))
+    private void customDamage(EnderDragon dragon, ServerLevel serverLevel, DamageSource source, float f) {
+        float adjusted = phaseManager.getCurrentPhase().onHurt(source, damageReceived);
+
+        float finalDamage = (hitPart == this.head)
+            ? adjusted * 2.0F
+            : adjusted;
+
+        this.reallyHurt(serverLevel, source, finalDamage);
     }
 
     @Redirect(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/phases/DragonPhaseInstance;getFlySpeed()F"))
