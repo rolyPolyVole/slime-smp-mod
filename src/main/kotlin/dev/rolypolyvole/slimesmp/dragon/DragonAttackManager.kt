@@ -1,9 +1,6 @@
 package dev.rolypolyvole.slimesmp.dragon
 
-import dev.rolypolyvole.slimesmp.dragon.attacks.AbstractDragonAttack
-import dev.rolypolyvole.slimesmp.dragon.attacks.BombAttack
-import dev.rolypolyvole.slimesmp.dragon.attacks.ChargeAttack
-import dev.rolypolyvole.slimesmp.dragon.attacks.FireballAttack
+import dev.rolypolyvole.slimesmp.dragon.attacks.*
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 
 class DragonAttackManager(private val dragon: EnderDragon) {
@@ -11,6 +8,7 @@ class DragonAttackManager(private val dragon: EnderDragon) {
         ChargeAttack.ChargeAttackType,
         ChargeAttack.ChargeAttackType,
         FireballAttack.FireballAttackType,
+        LightningAttack.LightningAttackType,
         BombAttack.BombAttackType
     )
 

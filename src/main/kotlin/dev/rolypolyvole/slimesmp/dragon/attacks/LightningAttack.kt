@@ -1,0 +1,134 @@
+package dev.rolypolyvole.slimesmp.dragon.attacks
+
+import dev.rolypolyvole.slimesmp.util.highestBlockY
+import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.damagesource.DamageSource
+import net.minecraft.world.damagesource.DamageTypes
+import net.minecraft.world.entity.EntitySpawnReason
+import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon
+import net.minecraft.world.entity.boss.enderdragon.phases.*
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.phys.Vec3
+import kotlin.reflect.KClass
+
+class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
+
+    object LightningAttackType : DragonAttackType {
+        override fun invalidPhases(): List<KClass<out DragonPhaseInstance>> = listOf(
+            DragonLandingApproachPhase::class,
+            DragonLandingPhase::class,
+            DragonDeathPhase::class,
+            AbstractDragonSittingPhase::class
+        )
+
+        override fun canStart(dragon: EnderDragon, lastAttack: AbstractDragonAttack?): Boolean {
+            return super.canStart(dragon, lastAttack) && lastAttack !is LightningAttack
+        }
+
+        override fun create(dragon: EnderDragon): AbstractDragonAttack {
+            return LightningAttack(dragon)
+        }
+    }
+
+    private val random: Double
+        get() = Math.random()
+
+    private val level = dragon.level() as ServerLevel
+
+    private lateinit var outpost: Vec3
+    private var reachedOutpost = false
+
+    private var ticks = 0
+    private var shouldEnd: Boolean = false
+
+    override fun tick() {
+        if (!reachedOutpost) return
+
+        when (ticks++) {
+            0 -> {
+                dragon.phaseManager.setPhase(EnderDragonPhase.HOVERING)
+                level.players().forEach { it.displayClientMessage(Component.literal("3..."), false) }
+            }
+            20 -> level.players().forEach { it.displayClientMessage(Component.literal("2..."), false) }
+            40 -> level.players().forEach { it.displayClientMessage(Component.literal("1..."), false) }
+        }
+
+        if (ticks < 60) return
+
+        level.players()
+            .filter(::isPlayerExposed)
+            .forEach(::strikePlayer)
+
+        this.shouldEnd = true
+    }
+
+    override fun beforeMove() {
+        if (reachedOutpost) {
+            dragon.deltaMovement = Vec3.ZERO
+            return
+        }
+
+        val delta = outpost.subtract(dragon.position())
+
+        if (delta.lengthSqr() < 256.0) {
+            this.reachedOutpost = true
+            dragon.deltaMovement = Vec3.ZERO
+            return
+        }
+
+        val speed = 1.0
+        val direction = delta.normalize()
+        dragon.deltaMovement = direction.scale(speed)
+    }
+
+    override fun start(): Boolean {
+        this.outpost = this.getOutpostLocation()
+
+        dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
+        dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(outpost)
+
+        dragon.level().players().forEach { it.displayClientMessage(Component.literal("started lightning attack"), false) }
+
+        return true
+    }
+
+    override fun end() {
+        dragon.phaseManager.setPhase(EnderDragonPhase.HOLDING_PATTERN)
+
+        dragon.level().players().forEach { it.displayClientMessage(Component.literal("finished lightning attack"), false) }
+
+        return
+    }
+
+    override fun getSpeedMultiplier(): Float = 1.0f
+    override fun getTurnSpeedMultiplier(): Float = 1.0f
+
+    override fun shouldEnd(): Boolean = shouldEnd
+
+    private fun getOutpostLocation(): Vec3 {
+        return dragon.fightOrigin.center.add(
+            random * 100.0 - 50.0,
+            115.0 + random * 35.0,
+            random * 100.0 - 50.0
+        )
+    }
+
+    private fun isPlayerExposed(player: Player): Boolean {
+        val blockY = player.position().highestBlockY(level).y
+        val playerY = player.position().y
+
+        return playerY >= blockY
+    }
+
+    private fun strikePlayer(player: Player) {
+        EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.MOB_SUMMONED)?.let {
+            it.snapTo(player.position())
+            level.addFreshEntity(it)
+        }
+
+        val damageSource = DamageSource(level.damageSources().damageTypes.getOrThrow(DamageTypes.LIGHTNING_BOLT))
+        player.hurtServer(level, damageSource, 17.0f)
+    }
+}
