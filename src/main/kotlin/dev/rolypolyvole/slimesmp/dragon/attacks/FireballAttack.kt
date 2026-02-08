@@ -88,7 +88,10 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     }
 
     override fun beforeMove() {
-        if (reachedOutpost) return
+        if (reachedOutpost) {
+            dragon.deltaMovement = Vec3.ZERO
+            return
+        }
 
         val delta = outpost.subtract(dragon.position())
 
