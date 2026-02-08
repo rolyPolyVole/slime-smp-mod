@@ -24,7 +24,7 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         }
     }
 
-    private var timer = 0
+    private var ticks = 0
 
     private var target: ServerPlayer? = null
     private var targetLocation: Vec3? = null
@@ -34,7 +34,7 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     private var shouldEnd = false
 
     override fun tick() {
-        this.timer++
+        this.ticks++
 
         if (targetLocation != null) {
             val vector = targetLocation!!.subtract(dragon.position()).reverse()
@@ -45,7 +45,6 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
         if (phase is DragonHoldingPatternPhase && !resurfacing) {
             this.resurfacing = true
-            this.timer = 0
 
             val horizontal = direction!!.multiply(1.0, 0.0, 1.0).normalize()
             val newDirection = Vec3(horizontal.x, 1.0, horizontal.z).normalize()
@@ -59,9 +58,9 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
     override fun beforeMove() {
         if (!resurfacing && target == null || target!!.hasDisconnected()) run { this.shouldEnd = true; return }
-        if (timer < 20) return
+        if (ticks < 20) return
 
-        if (timer == 20) {
+        if (ticks == 20) {
             this.targetLocation = this.getTargetLocation()
             this.direction = targetLocation!!.subtract(dragon.position()).normalize()
         }
@@ -78,7 +77,7 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     }
 
     override fun shouldEnd(): Boolean {
-        return shouldEnd || (phase !is DragonChargePlayerPhase && resurfacing) || timer > 200
+        return shouldEnd || (phase !is DragonChargePlayerPhase && resurfacing) || ticks > 200
     }
 
     override fun start(): Boolean {
