@@ -104,7 +104,7 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
     private fun getTargetLocation(): Vec3 {
         val dragonPos = dragon.position()
-        val followThrough = target!!.position().subtract(dragonPos).normalize().scale(5.0)
+        val followThrough = target!!.position().subtract(dragonPos).normalize().scale(8.0)
 
         return target!!.position().add(followThrough)
     }
