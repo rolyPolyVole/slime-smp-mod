@@ -11,10 +11,28 @@ import net.minecraft.world.phys.Vec3
 import kotlin.reflect.KClass
 
 class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
+
+    object FireballAttackType : DragonAttackType {
+        override fun invalidPhases(): List<KClass<out DragonPhaseInstance>> = listOf(
+            DragonLandingApproachPhase::class,
+            DragonLandingPhase::class,
+            DragonDeathPhase::class,
+            AbstractDragonSittingPhase::class
+        )
+
+        override fun canStart(dragon: EnderDragon, lastAttack: AbstractDragonAttack?): Boolean {
+            return super.canStart(dragon, lastAttack) && lastAttack !is FireballAttack
+        }
+
+        override fun create(dragon: EnderDragon): AbstractDragonAttack {
+            return FireballAttack(dragon)
+        }
+    }
+
     private val random: Double
         get() = Math.random()
 
-    private val outpost = this.getOutpostLocation()
+    private lateinit var outpost: Vec3
     private var reachedOutpost = false
 
     private var ticks = 0
@@ -26,21 +44,21 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     private var shouldEnd: Boolean = false
 
     override fun tick() {
-        if (!reachedOutpost) { return }
+        if (!reachedOutpost) return
 
         if (ticks == 0) dragon.phaseManager.setPhase(EnderDragonPhase.HOVERING)
         if (ticks++ < 40) return
 
         if (ticks > 15 * 20) {
-            shouldEnd = true
+            this.shouldEnd = true
             return
         }
 
         if (ticksUntilChangeTarget > 0) {
-            ticksUntilChangeTarget--
+            this.ticksUntilChangeTarget--
         } else {
             if (random < (targeted / (targeted + 3.0))) {
-                shouldEnd = true
+                this.shouldEnd = true
                 return
             }
 
@@ -51,12 +69,12 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
                 .map { it as ServerPlayer }
                 .randomOrNull() ?: run { shouldEnd = true; return }
 
-            this.ticksUntilChangeTarget = (80..145).random()
+            this.ticksUntilChangeTarget = (60..90).random()
             this.targeted++
         }
 
         val target = this.target
-        if (target == null || target.hasDisconnected()) {
+        if (target == null || target.hasDisconnected() || !dragon.hasLineOfSight(target)) {
             this.ticksUntilChangeTarget = 0
             return
         }
@@ -64,8 +82,8 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         val vector = target.position().subtract(dragon.position()).multiply(-1.0, -1.0, -1.0)
         dragon.lookAt(EntityAnchorArgument.Anchor.FEET, dragon.position().add(vector))
 
-        if (ticks % 10 == 0) {
-            shootFireballAt(target.eyePosition)
+        if (ticks % 15 == 0) {
+            shootFireballAt(target.position())
         }
     }
 
@@ -77,8 +95,6 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         if (delta.lengthSqr() < 256.0) {
             reachedOutpost = true
             dragon.deltaMovement = Vec3.ZERO
-            dragon.level().players()
-                .forEach { it.displayClientMessage(Component.literal("reached outpost"), false) }
             return
         }
 
@@ -87,42 +103,35 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         dragon.deltaMovement = direction.scale(speed)
     }
 
-    override fun start() {
+    override fun start(): Boolean {
+        this.outpost = this.getOutpostLocation()
+
         dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
         dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(outpost)
 
         dragon.level().players().forEach { it.displayClientMessage(Component.literal("started fireball attack"), false) }
-        return
+
+
+        return true
     }
 
     override fun end() {
         dragon.phaseManager.setPhase(EnderDragonPhase.HOLDING_PATTERN)
-        dragon.level().players().forEach { it.displayClientMessage(Component.literal("ending fireball attack"), false) }
+
+        dragon.level().players().forEach { it.displayClientMessage(Component.literal("finished fireball attack"), false) }
+
         return
     }
 
     override fun getSpeedMultiplier(): Float = 1.0f
     override fun getTurnSpeedMultiplier(): Float = 1.0f
 
-    override fun invalidPhases(): List<KClass<out DragonPhaseInstance>> = listOf(
-        DragonLandingApproachPhase::class,
-        DragonLandingPhase::class,
-        DragonDeathPhase::class,
-        AbstractDragonSittingPhase::class
-    )
-
-    override fun canStart(lastAttack: AbstractDragonAttack?): Boolean {
-        return super.canStart(lastAttack) && lastAttack !is FireballAttack
-    }
-
     override fun shouldEnd(): Boolean = shouldEnd
-
-    override fun getStartDelayTicks(): Int = (20..35).random() * 20
 
     private fun getOutpostLocation(): Vec3 {
         return dragon.fightOrigin.center.add(
             random * 100.0 - 50.0,
-            100.0 + random * 35.0,
+            75.0 + random * 35.0,
             random * 100.0 - 50.0
         )
     }
@@ -130,22 +139,16 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     private fun shootFireballAt(targetPos: Vec3) {
         val level = dragon.level() as? ServerLevel ?: return
 
-        val view = dragon.getViewVector(1.0f)
-        val head = dragon.head
-
-        val x = head.x - view.x * 1.0
-        val y = head.getY(0.5) + 0.5
-        val z = head.z - view.z * 1.0
-
-        val raw = Vec3(targetPos.x - x, targetPos.y - y, targetPos.z - z)
-        if (raw.lengthSqr() < 1e-6) return
-        val direction = raw.normalize()
+        val facing = targetPos.subtract(dragon.position()).normalize()
+        val mouthOffset = facing.multiply(1.0, 0.0, 1.0).normalize().scale(6.5)
+        val mouth = dragon.position().add(mouthOffset).subtract(0.0, 0.5, 0.0)
+        val velocity = targetPos.subtract(mouth).normalize()
 
         level.levelEvent(null, 1017, dragon.blockPosition(), 0)
 
-        DragonFireball(level, dragon, direction).let {
-            it.snapTo(x, y, z, 0.0f, 0.0f)
-            level.addFreshEntity(it)
-        }
+        val dragonFireball = DragonFireball(level, dragon, velocity)
+        dragonFireball.accelerationPower = 0.25
+        dragonFireball.snapTo(mouth.x, mouth.y, mouth.z, 0.0f, 0.0f)
+        level.addFreshEntity(dragonFireball)
     }
 }

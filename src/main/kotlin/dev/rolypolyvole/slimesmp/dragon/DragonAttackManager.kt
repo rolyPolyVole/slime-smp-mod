@@ -1,23 +1,23 @@
 package dev.rolypolyvole.slimesmp.dragon
 
 import dev.rolypolyvole.slimesmp.dragon.attacks.AbstractDragonAttack
+import dev.rolypolyvole.slimesmp.dragon.attacks.BombAttack
 import dev.rolypolyvole.slimesmp.dragon.attacks.ChargeAttack
-import dev.rolypolyvole.slimesmp.dragon.attacks.DummyAttack
 import dev.rolypolyvole.slimesmp.dragon.attacks.FireballAttack
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 
 class DragonAttackManager(private val dragon: EnderDragon) {
     private val attacks = listOf(
-        ::ChargeAttack,
-        ::FireballAttack,
-        ::DummyAttack
+        ChargeAttack.ChargeAttackType,
+        ChargeAttack.ChargeAttackType,
+        FireballAttack.FireballAttackType,
+        BombAttack.BombAttackType
     )
 
     private var currentAttack: AbstractDragonAttack? = null
     private var lastAttack: AbstractDragonAttack? = null
-    private var nextAttack: AbstractDragonAttack? = null
 
-    private var ticksUntilNextAttack: Int = 0
+    private var ticksUntilNextAttack = (160..300).random()
 
     val speedMultiplier: Float
         get() = currentAttack?.getSpeedMultiplier() ?: 1.0F
@@ -30,8 +30,10 @@ class DragonAttackManager(private val dragon: EnderDragon) {
 
             if (it.shouldEnd()) {
                 it.end()
+
                 this.lastAttack = it
                 this.currentAttack = null
+                this.ticksUntilNextAttack = (160..300).random()
             }
 
             return
@@ -42,20 +44,15 @@ class DragonAttackManager(private val dragon: EnderDragon) {
             return
         }
 
-        if (nextAttack != null) {
-            this.currentAttack = nextAttack
-            this.nextAttack = null
+        val picked = attacks
+            .filter { it.canStart(dragon, lastAttack) }
+            .randomOrNull()?.create(dragon)
 
-            return currentAttack!!.start()
+        if (picked != null && picked.start()) {
+            this.currentAttack = picked
+        } else {
+            this.ticksUntilNextAttack = 20
         }
-
-        val next = attacks
-            .map { it(dragon) }
-            .filter { it.canStart(lastAttack) }
-            .randomOrNull() ?: return
-
-        this.ticksUntilNextAttack = next.getStartDelayTicks()
-        this.nextAttack = next
     }
 
     fun onBeforeMove() {
