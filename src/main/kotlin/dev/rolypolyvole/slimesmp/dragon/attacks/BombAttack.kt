@@ -5,10 +5,7 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.EntitySpawnReason
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
-import net.minecraft.world.entity.boss.enderdragon.phases.DragonDeathPhase
-import net.minecraft.world.entity.boss.enderdragon.phases.DragonLandingApproachPhase
-import net.minecraft.world.entity.boss.enderdragon.phases.DragonLandingPhase
-import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance
+import net.minecraft.world.entity.boss.enderdragon.phases.*
 import kotlin.reflect.KClass
 
 class BombAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
@@ -18,6 +15,7 @@ class BombAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
     object BombAttackType : DragonAttackType {
         override fun invalidPhases(): List<KClass<out DragonPhaseInstance>> = listOf(
+            AbstractDragonSittingPhase::class,
             DragonLandingApproachPhase::class,
             DragonLandingPhase::class,
             DragonDeathPhase::class,
