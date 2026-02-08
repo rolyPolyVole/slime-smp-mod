@@ -68,7 +68,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
 
     @Unique
     private EnderDragon self() {
-        return (EnderDragon)(Object)this;
+        return (EnderDragon)(Object) this;
     }
 
     @Inject(method = "aiStep()V", at = @At("TAIL"))
@@ -143,6 +143,17 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
             : adjusted;
 
         this.reallyHurt(serverLevel, source, finalDamage);
+    }
+
+    @ModifyConstant(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z", constant = @org.spongepowered.asm.mixin.injection.Constant(floatValue = 0.25F))
+    private float customTakeoffThreshold(float original) {
+        EnderDragon dragon = self();
+
+        float max = dragon.getMaxHealth();
+        if (max <= 0.0F) return original;
+
+        float threshold = Math.min(0.10F * max, 100.0F);
+        return threshold / max;
     }
 
     @Redirect(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/phases/DragonPhaseInstance;getFlySpeed()F"))
