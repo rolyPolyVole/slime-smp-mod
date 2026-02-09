@@ -15,7 +15,7 @@ class DragonAttackManager(private val dragon: EnderDragon) {
     private var currentAttack: AbstractDragonAttack? = null
     private var lastAttack: AbstractDragonAttack? = null
 
-    private var ticksUntilNextAttack = (160..300).random()
+    private var ticksUntilNextAttack = 0
 
     val speedMultiplier: Float
         get() = currentAttack?.getSpeedMultiplier() ?: 1.0F

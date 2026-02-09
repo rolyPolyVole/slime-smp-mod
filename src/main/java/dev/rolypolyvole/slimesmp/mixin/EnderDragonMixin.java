@@ -74,13 +74,15 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     @Inject(method = "aiStep()V", at = @At("TAIL"))
     private void tick(CallbackInfo info) {
         if (this.level().isClientSide()) return;
-        if (attackManager != null) attackManager.tick();
+
+        if (attackManager != null && tickCount < 15 * 20 && !isDeadOrDying()) attackManager.tick();
     }
 
     @Inject(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V", shift = At.Shift.BEFORE))
     private void beforeMove(CallbackInfo info) {
         if (this.level().isClientSide()) return;
-        if (attackManager != null) attackManager.onBeforeMove();
+
+        if (attackManager != null && tickCount < 15 * 20 && !isDeadOrDying()) attackManager.onBeforeMove();
     }
 
     @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Ljava/util/List;)V", at = @At("HEAD"), cancellable = true)
