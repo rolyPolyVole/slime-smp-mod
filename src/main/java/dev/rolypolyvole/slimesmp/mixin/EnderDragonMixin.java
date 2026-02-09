@@ -1,5 +1,6 @@
 package dev.rolypolyvole.slimesmp.mixin;
 
+import dev.rolypolyvole.slimesmp.dragon.DragonAbilityManager;
 import dev.rolypolyvole.slimesmp.dragon.DragonAttackManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -50,6 +51,8 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
 
     @Unique
     private DragonAttackManager attackManager;
+    @Unique
+    private DragonAbilityManager abilityManager;
 
     protected EnderDragonMixin(EntityType<? extends Mob> entityType, Level level) {
         super(entityType, level);
@@ -64,6 +67,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
         this.setHealth((float) health);
 
         this.attackManager = new DragonAttackManager(self());
+        this.abilityManager = new DragonAbilityManager(self());
     }
 
     @Unique
@@ -75,14 +79,17 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     private void tick(CallbackInfo info) {
         if (this.level().isClientSide()) return;
 
-        if (attackManager != null && tickCount < 15 * 20 && !isDeadOrDying()) attackManager.tick();
+        if (tickCount > 15 * 20 && !isDeadOrDying()) {
+            if (attackManager != null) attackManager.tick();
+            if (abilityManager != null) abilityManager.tick();
+        }
     }
 
     @Inject(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V", shift = At.Shift.BEFORE))
     private void beforeMove(CallbackInfo info) {
         if (this.level().isClientSide()) return;
 
-        if (attackManager != null && tickCount < 15 * 20 && !isDeadOrDying()) attackManager.onBeforeMove();
+        if (attackManager != null && tickCount > 15 * 20 && !isDeadOrDying()) attackManager.onBeforeMove();
     }
 
     @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Ljava/util/List;)V", at = @At("HEAD"), cancellable = true)
@@ -140,7 +147,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     private void customDamage(EnderDragon dragon, ServerLevel serverLevel, DamageSource source, float f) {
         float adjusted = phaseManager.getCurrentPhase().onHurt(source, damageReceived);
 
-        float finalDamage = (hitPart == this.head)
+        float finalDamage = (hitPart == head)
             ? adjusted * 2.0F
             : adjusted;
 
@@ -156,6 +163,13 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
 
         float threshold = Math.min(0.10F * max, 100.0F);
         return threshold / max;
+    }
+
+    @ModifyConstant(method = "checkCrystals()V", constant = @org.spongepowered.asm.mixin.injection.Constant(floatValue = 1.0F))
+    private float customCrystalHeal(float original) {
+        int ticksSinceLastHurt = tickCount - getLastHurtByMobTimestamp();
+
+        return ticksSinceLastHurt > 200 ? 8.0F : 2.0F;
     }
 
     @Redirect(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/phases/DragonPhaseInstance;getFlySpeed()F"))
