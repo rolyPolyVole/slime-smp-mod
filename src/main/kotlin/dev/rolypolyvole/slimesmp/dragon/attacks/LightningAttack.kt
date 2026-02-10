@@ -1,10 +1,9 @@
 package dev.rolypolyvole.slimesmp.dragon.attacks
 
+import dev.rolypolyvole.slimesmp.data.DragonDamageTypes
 import dev.rolypolyvole.slimesmp.util.highestBlockY
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
-import net.minecraft.world.damagesource.DamageSource
-import net.minecraft.world.damagesource.DamageTypes
 import net.minecraft.world.entity.EntitySpawnReason
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
@@ -116,8 +115,13 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     }
 
     private fun isPlayerExposed(player: Player): Boolean {
-        val blockY = player.position().highestBlockY(level).y
-        val playerY = player.position().y
+        val blockY = player.blockPosition().highestBlockY(level).y
+        val playerY = player.blockPosition().y
+
+        // log the 2 y values
+        dragon.level().players().forEach {
+            it.displayClientMessage(Component.literal("Player Y: $playerY, Block Y: $blockY"), false)
+        }
 
         return playerY >= blockY
     }
@@ -128,7 +132,7 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
             level.addFreshEntity(it)
         }
 
-        val damageSource = DamageSource(level.damageSources().damageTypes.getOrThrow(DamageTypes.LIGHTNING_BOLT))
-        player.hurtServer(level, damageSource, 17.0f)
+        val source = DragonDamageTypes.dragonLightning(level, dragon)
+        player.hurtServer(level, source, 17.0f)
     }
 }

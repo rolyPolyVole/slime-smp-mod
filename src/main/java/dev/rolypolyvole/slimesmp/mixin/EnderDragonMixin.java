@@ -1,5 +1,6 @@
 package dev.rolypolyvole.slimesmp.mixin;
 
+import dev.rolypolyvole.slimesmp.data.DragonDamageTypes;
 import dev.rolypolyvole.slimesmp.dragon.DragonAbilityManager;
 import dev.rolypolyvole.slimesmp.dragon.DragonAttackManager;
 import net.minecraft.server.level.ServerLevel;
@@ -127,7 +128,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
                 boolean onCooldown = livingEntity.getLastHurtByMobTimestamp() >= entity.tickCount - 2;
 
                 if (!isSitting && !onCooldown) {
-                    DamageSource damageSource = this.damageSources().mobAttack(this);
+                    DamageSource damageSource = DragonDamageTypes.INSTANCE.dragonBodyHit(serverLevel, self());
                     entity.hurtServer(serverLevel, damageSource, damage);
                     EnchantmentHelper.doPostAttackEffects(serverLevel, entity, damageSource);
                 }

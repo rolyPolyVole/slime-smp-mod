@@ -1,15 +1,17 @@
 package dev.rolypolyvole.slimesmp.dragon
 
-import dev.rolypolyvole.slimesmp.dragon.attacks.*
+import dev.rolypolyvole.slimesmp.dragon.attacks.AbstractDragonAttack
+import dev.rolypolyvole.slimesmp.dragon.attacks.ChargeAttack
+import dev.rolypolyvole.slimesmp.dragon.attacks.LightningAttack
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 
 class DragonAttackManager(private val dragon: EnderDragon) {
     private val attacks = listOf(
+//        ChargeAttack.ChargeAttackType,
         ChargeAttack.ChargeAttackType,
-        ChargeAttack.ChargeAttackType,
-        FireballAttack.FireballAttackType,
+//        FireballAttack.FireballAttackType,
         LightningAttack.LightningAttackType,
-        BombAttack.BombAttackType
+//        BombAttack.BombAttackType
     )
 
     private var currentAttack: AbstractDragonAttack? = null
