@@ -124,6 +124,7 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     private fun strikePlayer(player: Player) {
         EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.MOB_SUMMONED)?.let {
             it.snapTo(player.position())
+            it.setVisualOnly(true)
             level.addFreshEntity(it)
         }
 
