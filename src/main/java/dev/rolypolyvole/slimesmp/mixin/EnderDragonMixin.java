@@ -168,9 +168,8 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     @ModifyConstant(method = "checkCrystals()V", constant = @org.spongepowered.asm.mixin.injection.Constant(floatValue = 1.0F))
     private float customCrystalHeal(float original) {
         int ticksSinceLastHurt = tickCount - getLastHurtByMobTimestamp();
-        float extra = Math.round(ticksSinceLastHurt - 200 / 20.0F);
 
-        return ticksSinceLastHurt > 200 ? 8.0F + extra : 2.0F;
+        return ticksSinceLastHurt > 200 ? 8.0F : 2.0F;
     }
 
     @Redirect(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/phases/DragonPhaseInstance;getFlySpeed()F"))
