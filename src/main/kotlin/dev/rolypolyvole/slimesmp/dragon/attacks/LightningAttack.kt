@@ -118,11 +118,6 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         val blockY = player.blockPosition().highestBlockY(level).y
         val playerY = player.blockPosition().y
 
-        // log the 2 y values
-        dragon.level().players().forEach {
-            it.displayClientMessage(Component.literal("Player Y: $playerY, Block Y: $blockY"), false)
-        }
-
         return playerY >= blockY
     }
 
@@ -133,6 +128,6 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         }
 
         val source = DragonDamageTypes.dragonLightning(level, dragon)
-        player.hurtServer(level, source, 17.0f)
+        player.hurtServer(level, source, 11.5f)
     }
 }
