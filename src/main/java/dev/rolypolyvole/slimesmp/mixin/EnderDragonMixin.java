@@ -102,7 +102,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
 
         for (Entity entity : list) {
             if (entity instanceof LivingEntity) {
-                DamageSource damageSource = this.damageSources().mobAttack(this);
+                DamageSource damageSource = DragonDamageTypes.INSTANCE.dragonBodyHit(serverLevel, self());
                 entity.hurtServer(serverLevel, damageSource, damage);
                 EnchantmentHelper.doPostAttackEffects(serverLevel, entity, damageSource);
             }
