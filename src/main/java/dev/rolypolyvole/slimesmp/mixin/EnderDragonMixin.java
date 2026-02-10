@@ -180,7 +180,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
         if (instance.getPhase() == EnderDragonPhase.CHARGING_PLAYER) {
             return original * 2.4F;
         } else {
-            return original * 1.8F;
+            return original * 1.7F;
         }
     }
 
@@ -188,11 +188,11 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     private float getTurnSpeed(DragonPhaseInstance instance) {
         float original = instance.getTurnSpeed();
 
-        return original * 1.8F * attackManager.getTurnSpeedMultiplier();
+        return original * 1.7F * attackManager.getTurnSpeedMultiplier();
     }
 
     @ModifyConstant(method = "aiStep()V", constant = @org.spongepowered.asm.mixin.injection.Constant(floatValue = 0.06F))
     private float forwardMovement(float original) {
-        return original * 1.8F * attackManager.getSpeedMultiplier();
+        return original * 1.7F * attackManager.getSpeedMultiplier();
     }
 }
