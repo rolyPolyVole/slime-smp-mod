@@ -3,6 +3,8 @@ package dev.rolypolyvole.slimesmp.mixin;
 import dev.rolypolyvole.slimesmp.data.DragonDamageTypes;
 import dev.rolypolyvole.slimesmp.dragon.DragonAbilityManager;
 import dev.rolypolyvole.slimesmp.dragon.DragonAttackManager;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -42,8 +44,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     @Shadow
     protected abstract void reallyHurt(ServerLevel serverLevel, DamageSource damageSource, float f);
 
-    @Shadow
-    @Final
+    @Final @Shadow
     public EnderDragonPart head;
     @Unique
     private EnderDragonPart hitPart;
@@ -66,6 +67,8 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
 
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
         this.setHealth((float) health);
+
+        this.setCustomName(Component.literal("Ender Dragon").withStyle(ChatFormatting.LIGHT_PURPLE));
 
         this.attackManager = new DragonAttackManager(self());
         this.abilityManager = new DragonAbilityManager(self());

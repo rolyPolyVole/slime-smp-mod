@@ -4,8 +4,9 @@
     "package": "dev.rolypolyvole.slimesmp.mixin",
     "compatibilityLevel": "JAVA_21",
     "mixins": [
+        "DragonHoldingPatternPhaseMixin",
         "EnderDragonMixin",
-        "DragonHoldingPatternPhaseMixin"
+        "ServerPlayerMixin"
     ],
     "injectors": {
         "defaultRequire": 1
