@@ -2,7 +2,6 @@ package dev.rolypolyvole.slimesmp.dragon.attacks
 
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.network.chat.Component
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.*
@@ -62,11 +61,10 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
                 return
             }
 
-            this.target = dragon.level().players()
+            this.target = level.players()
                 .filter { !it.isCreative && !it.isSpectator && it.isAlive }
                 .filter { it.position().distanceToSqr(dragon.position()) < 22500.0 }
                 .filter { dragon.hasLineOfSight(it) }
-                .map { it as ServerPlayer }
                 .randomOrNull() ?: run { shouldEnd = true; return }
 
             this.ticksUntilChangeTarget = (60..90).random()
@@ -140,8 +138,6 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     }
 
     private fun shootFireballAt(targetPos: Vec3) {
-        val level = dragon.level() as? ServerLevel ?: return
-
         val facing = targetPos.subtract(dragon.position()).normalize()
         val mouthOffset = facing.multiply(1.0, 0.0, 1.0).normalize().scale(6.5)
         val mouth = dragon.position().add(mouthOffset).subtract(0.0, 0.5, 0.0)

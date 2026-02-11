@@ -3,7 +3,6 @@ package dev.rolypolyvole.slimesmp.dragon.attacks
 import dev.rolypolyvole.slimesmp.data.DragonDamageTypes
 import dev.rolypolyvole.slimesmp.util.highestBlockY
 import net.minecraft.network.chat.Component
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.EntitySpawnReason
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
@@ -33,8 +32,6 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
     private val random: Double
         get() = Math.random()
-
-    private val level = dragon.level() as ServerLevel
 
     private lateinit var outpost: Vec3
     private var reachedOutpost = false

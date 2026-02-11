@@ -81,10 +81,9 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     }
 
     override fun start(): Boolean {
-        this.target = dragon.level().players()
+        this.target = level.players()
             .filter { !it.isCreative && !it.isSpectator && it.isAlive }
             .filter { it.position().distanceToSqr(dragon.position()) in 900.0..22500.0 }
-            .map { it as ServerPlayer }
             .randomOrNull() ?: run { this.shouldEnd = true; return false }
 
         this.targetLocation = this.getTargetLocation()

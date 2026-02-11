@@ -1,5 +1,6 @@
 package dev.rolypolyvole.slimesmp.dragon.attacks
 
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance
 import kotlin.reflect.KClass
@@ -7,6 +8,9 @@ import kotlin.reflect.KClass
 abstract class AbstractDragonAttack(protected val dragon: EnderDragon) {
     protected val phase: DragonPhaseInstance
         get() = dragon.phaseManager.currentPhase
+
+    protected val level: ServerLevel
+        get() = dragon.level() as ServerLevel
 
     abstract fun tick()
     open fun beforeMove() {}
