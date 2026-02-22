@@ -3,7 +3,7 @@ package dev.rolypolyvole.slimesmp.dragon.attacks
 import com.mojang.math.Transformation
 import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.core.particles.PowerParticleOption
-import net.minecraft.network.chat.Component
+import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.Display
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.EntitySpawnReason.MOB_SUMMONED
@@ -68,9 +68,9 @@ class BombAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
             EntityType.TNT_MINECART.spawn(level, pos, MOB_SUMMONED)?.let {
                 it.setDeltaMovement(
-                    Math.random() * 0.15 - 0.15,
+                    0.0,//Math.random() * 0.15 - 0.15,
                     -Math.random() * 0.6,
-                    Math.random() * 0.15 - 0.15
+                    0.0//Math.random() * 0.15 - 0.15
                 )
 
                 it.fallDistance = 3.0
@@ -83,13 +83,11 @@ class BombAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     }
 
     override fun start(): Boolean {
-        dragon.level().players().forEach { it.displayClientMessage(Component.literal("starting bomb attack"), false) }
+        broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
         return true
     }
 
     override fun end() {
-        dragon.level().players().forEach { it.displayClientMessage(Component.literal("finished bomb attack"), false) }
-        return
     }
 
     override fun getSpeedMultiplier(): Float = 1.0f
@@ -103,8 +101,7 @@ class BombAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
             it.startRiding(entity)
             it.setTransformation(DISPLAY_TRANSFORMATION)
             it.yRot = entity.yRot - 90.0F
-            it.setGlowingTag(true)
-            it.glowColorOverride = 0xFF00FF
+            //it.brightnessOverride = Brightness(15, 15)
             bombs.add(it)
         }
     }
@@ -113,6 +110,7 @@ class BombAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         val age = bomb.tickCount.toFloat()
 
         bomb.transformationInterpolationDuration = 1
+        bomb.posRotInterpolationDuration = 1
 
         val matrix = Matrix4f()
             .translationRotateScale(Vector3f(), Quaternionf().rotateY(age * 0.1f), Vector3f(DISPLAY_SCALE))

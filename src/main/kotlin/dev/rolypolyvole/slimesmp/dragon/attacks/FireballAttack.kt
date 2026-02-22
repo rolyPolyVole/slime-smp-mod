@@ -1,8 +1,8 @@
 package dev.rolypolyvole.slimesmp.dragon.attacks
 
 import net.minecraft.commands.arguments.EntityAnchorArgument
-import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.*
 import net.minecraft.world.entity.projectile.hurtingprojectile.DragonFireball
@@ -45,7 +45,11 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     override fun tick() {
         if (!reachedOutpost) return
 
-        if (ticks == 0) dragon.phaseManager.setPhase(EnderDragonPhase.HOVERING)
+        if (ticks == 0) {
+            dragon.phaseManager.setPhase(EnderDragonPhase.HOVERING)
+            broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
+        }
+
         if (ticks++ < 40) return
 
         if (ticks > 15 * 20) {
@@ -110,18 +114,13 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
         dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(outpost)
 
-        dragon.level().players().forEach { it.displayClientMessage(Component.literal("started fireball attack"), false) }
-
+        broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
 
         return true
     }
 
     override fun end() {
         dragon.phaseManager.setPhase(EnderDragonPhase.HOLDING_PATTERN)
-
-        dragon.level().players().forEach { it.displayClientMessage(Component.literal("finished fireball attack"), false) }
-
-        return
     }
 
     override fun getSpeedMultiplier(): Float = 1.0f

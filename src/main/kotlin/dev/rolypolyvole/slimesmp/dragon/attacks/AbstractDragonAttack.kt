@@ -1,6 +1,11 @@
 package dev.rolypolyvole.slimesmp.dragon.attacks
 
+import net.minecraft.core.Holder
+import net.minecraft.network.protocol.game.ClientboundSoundPacket
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.sounds.SoundEvent
+import net.minecraft.sounds.SoundSource
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance
 import kotlin.reflect.KClass
@@ -11,6 +16,20 @@ abstract class AbstractDragonAttack(protected val dragon: EnderDragon) {
 
     protected val level: ServerLevel
         get() = dragon.level() as ServerLevel
+
+    protected fun broadcastSound(sound: SoundEvent, volume: Float = 1.0F, pitch: Float = 1.0F) {
+        level.players().forEach { playSound(it, sound, volume, pitch) }
+    }
+
+    protected fun playSound(player: ServerPlayer, sound: SoundEvent, volume: Float = 1.0F, pitch: Float = 1.0F) {
+        val packet = ClientboundSoundPacket(
+            Holder.direct(sound), SoundSource.HOSTILE,
+            player.x, player.y, player.z,
+            volume, pitch, level.random.nextLong()
+        )
+
+        player.connection.send(packet)
+    }
 
     abstract fun tick()
     open fun beforeMove() {}

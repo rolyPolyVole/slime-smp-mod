@@ -1,8 +1,8 @@
 package dev.rolypolyvole.slimesmp.dragon.attacks
 
 import net.minecraft.commands.arguments.EntityAnchorArgument
-import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.*
 import net.minecraft.world.phys.Vec3
@@ -91,14 +91,12 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
         dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(targetLocation!!)
 
-        dragon.level().players().forEach { it.displayClientMessage(Component.literal("start dragon charge"), false) }
+        broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
 
         return true
     }
 
     override fun end() {
-        dragon.level().players().forEach { it.displayClientMessage(Component.literal("stop dragon charge"), false) }
-        return
     }
 
     private fun getTargetLocation(): Vec3 {

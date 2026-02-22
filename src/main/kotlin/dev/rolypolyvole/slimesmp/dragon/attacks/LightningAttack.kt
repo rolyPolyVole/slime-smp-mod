@@ -2,7 +2,7 @@ package dev.rolypolyvole.slimesmp.dragon.attacks
 
 import dev.rolypolyvole.slimesmp.data.DragonDamageTypes
 import dev.rolypolyvole.slimesmp.util.highestBlockY
-import net.minecraft.network.chat.Component
+import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.EntitySpawnReason
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
@@ -42,13 +42,17 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     override fun tick() {
         if (!reachedOutpost) return
 
-        when (ticks++) {
-            0 -> {
-                dragon.phaseManager.setPhase(EnderDragonPhase.HOVERING)
-                level.players().forEach { it.displayClientMessage(Component.literal("3..."), false) }
-            }
-            20 -> level.players().forEach { it.displayClientMessage(Component.literal("2..."), false) }
-            40 -> level.players().forEach { it.displayClientMessage(Component.literal("1..."), false) }
+        if (this.ticks++ == 0) {
+            dragon.phaseManager.setPhase(EnderDragonPhase.HOVERING)
+            broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
+        }
+
+        if (ticks < 10) {
+            broadcastSound(SoundEvents.LIGHTNING_BOLT_THUNDER)
+        }
+
+        level.players().filter(::isPlayerExposed).forEach {
+            playSound(it, SoundEvents.FLINTANDSTEEL_USE, pitch = 2.0F)
         }
 
         if (ticks < 60) return
@@ -85,17 +89,13 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
         dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(outpost)
 
-        dragon.level().players().forEach { it.displayClientMessage(Component.literal("started lightning attack"), false) }
+        broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
 
         return true
     }
 
     override fun end() {
         dragon.phaseManager.setPhase(EnderDragonPhase.HOLDING_PATTERN)
-
-        dragon.level().players().forEach { it.displayClientMessage(Component.literal("finished lightning attack"), false) }
-
-        return
     }
 
     override fun getSpeedMultiplier(): Float = 1.0f
