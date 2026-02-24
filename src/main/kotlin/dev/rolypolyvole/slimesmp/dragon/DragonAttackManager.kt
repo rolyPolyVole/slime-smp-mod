@@ -10,6 +10,7 @@ class DragonAttackManager(private val dragon: EnderDragon) {
         ChargeAttack.ChargeAttackType,
         FireballAttack.FireballAttackType,
         LightningAttack.LightningAttackType,
+        BombAttack.BombAttackType,
         BombAttack.BombAttackType
     )
 
@@ -32,7 +33,7 @@ class DragonAttackManager(private val dragon: EnderDragon) {
 
                 this.lastAttack = it
                 this.currentAttack = null
-                this.ticksUntilNextAttack = (160..300).random()
+                this.ticksUntilNextAttack = (80..200).random()
             }
 
             return
