@@ -63,12 +63,6 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(EntityType<? extends EnderDragon> entityType, Level level, CallbackInfo ci) {
-        double playerCount = Math.max(level.players().size(), 1);
-        double health = 800.0 + 700 * Math.sqrt(playerCount - 1);
-
-        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
-        this.setHealth((float) health);
-
         this.setCustomName(Component.literal("Ender Dragon").withStyle(ChatFormatting.LIGHT_PURPLE));
 
         this.attackManager = new DragonAttackManager(self());
@@ -84,10 +78,25 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     private void tick(CallbackInfo info) {
         if (this.level().isClientSide()) return;
 
+        updateMaxHealth();
+
         if (tickCount > 15 * 20 && !isDeadOrDying()) {
             if (attackManager != null) attackManager.tick();
             if (abilityManager != null) abilityManager.tick();
         }
+    }
+
+    @Unique
+    private void updateMaxHealth() {
+        double playerCount = Math.max(level().players().size(), 1);
+        double newMax = 800.0 + 700 * Math.sqrt(playerCount - 1);
+        double oldMax = this.getMaxHealth();
+
+        if (newMax == oldMax) return;
+
+        float healthPercent = this.getHealth() / (float) oldMax;
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(newMax);
+        this.setHealth(healthPercent * (float) newMax);
     }
 
     @Inject(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V", shift = At.Shift.BEFORE))
