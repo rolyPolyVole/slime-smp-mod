@@ -10,7 +10,7 @@ import kotlin.reflect.KClass
 class BombAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     private val random: Double; get() = Math.random()
 
-    private var lifetime = (200..240).random()
+    private var lifetime = (240..280).random()
     private var nextBomb = (12..30).random()
 
     object BombAttackType : DragonAttackType {
