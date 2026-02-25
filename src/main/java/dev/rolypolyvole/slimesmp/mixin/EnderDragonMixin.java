@@ -80,7 +80,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
 
         updateMaxHealth();
 
-        if (tickCount > 15 * 20 && !isDeadOrDying()) {
+        if (tickCount > 10 * 20 && !isDeadOrDying()) {
             if (attackManager != null) attackManager.tick();
             if (abilityManager != null) abilityManager.tick();
         }
