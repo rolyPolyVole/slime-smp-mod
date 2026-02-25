@@ -52,12 +52,14 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         }
 
         if (!resurfacing && ticks > 20) {
-            val remaining = targetLocation!!.subtract(dragon.position())
+            val currentTarget = targetLocation ?: return
+            val currentDirection = direction ?: return
+            val remaining = currentTarget.subtract(dragon.position())
 
-            if (remaining.dot(direction!!) <= 0 || dragon.position().distanceTo(targetLocation!!) < 5.0) {
+            if (remaining.dot(currentDirection) <= 0 || dragon.position().distanceTo(currentTarget) < 5.0) {
                 this.resurfacing = true
 
-                val horizontal = direction!!.multiply(1.0, 0.0, 1.0).normalize()
+                val horizontal = currentDirection.multiply(1.0, 0.0, 1.0).normalize()
                 val newDirection = Vec3(horizontal.x, 1.0, horizontal.z).normalize()
 
                 this.targetLocation = dragon.position().add(newDirection.scale(50.0))
@@ -67,7 +69,7 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
             }
         }
 
-        val to = targetLocation!!.subtract(dragon.position())
+        val to = (targetLocation ?: return).subtract(dragon.position())
         val movement = to.normalize()
         val speed = if (resurfacing) 1.2 else 1.8
 
