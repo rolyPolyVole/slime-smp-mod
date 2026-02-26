@@ -28,7 +28,7 @@ class DragonAbilityManager(private val dragon: EnderDragon) {
     }
 
     private fun respawnCrystal() {
-        val pos = CustomEndSpikes.CRYSTAL_LOCATIONS
+        val pos = CustomEndSpikes.getCrystalLocations(level)
             .filterNot(::doesCrystalExist)
             .randomOrNull() ?: return
 

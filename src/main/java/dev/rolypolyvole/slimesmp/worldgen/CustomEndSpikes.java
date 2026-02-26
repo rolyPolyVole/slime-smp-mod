@@ -1,7 +1,8 @@
 package dev.rolypolyvole.slimesmp.worldgen;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockPos.MutableBlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -10,10 +11,15 @@ import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.Half;
+import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.feature.SpikeFeature;
 import net.minecraft.world.level.levelgen.feature.configurations.SpikeConfiguration;
 import net.minecraft.world.phys.Vec3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -21,40 +27,246 @@ import java.util.Set;
 public final class CustomEndSpikes {
     private CustomEndSpikes() {}
 
-    private static final int START_DEPTH = 5;              // requested
-    private static final float MAX_LEAN_PER_Y = 0.22f;      // tune
-    private static final float TIP_STOP_RADIUS = 0.62f;     // stop when it would become a needle
-    private static final int CAGE_RADIUS = 4;
+    private static final Logger LOGGER = LoggerFactory.getLogger("slime-smp-mod");
+
+    private static final int START_DEPTH = 12;
+    private static final float MAX_LEAN_PER_Y = 0.35f;
+    private static final float TAPER_EXPONENT = 0.97f;
+    private static final int TIP_STRUCTURE_HEIGHT = 6;
 
     public static final Set<Vec3> CRYSTAL_LOCATIONS = new HashSet<>();
+    private static boolean needsRegeneration = false;
+
+    /**
+     * Returns cached crystal locations, computing from spike cache data if empty.
+     * Crystal positions are deterministic from the cache — no world scanning needed.
+     */
+    public static Set<Vec3> getCrystalLocations(ServerLevel level) {
+        if (!CRYSTAL_LOCATIONS.isEmpty()) {
+            return CRYSTAL_LOCATIONS;
+        }
+
+        for (SpikeFeature.EndSpike spike : SpikeFeature.getSpikesForLevel(level)) {
+            CRYSTAL_LOCATIONS.add(new Vec3(
+                    spike.getCenterX() + 0.5,
+                    spike.getHeight() + 0.1,
+                    spike.getCenterZ() + 0.5
+            ));
+        }
+
+        LOGGER.info("Crystal locations loaded: {}", CRYSTAL_LOCATIONS.size());
+
+        return CRYSTAL_LOCATIONS;
+    }
+
+    // ── Spike placement ─────────────────────────────────────────────────
 
     public static void place(ServerLevelAccessor level, RandomSource ignored, SpikeConfiguration cfg, SpikeFeature.EndSpike spike) {
+        if (level instanceof net.minecraft.server.level.WorldGenRegion) {
+            // Initial feature generation — flag for deferred placement once chunks are loaded.
+            needsRegeneration = true;
+            return;
+        }
+        // Dragon respawn — ServerLevel, all chunks loaded, place directly.
+        placeSpike(level, spike, true);
+    }
+
+    /**
+     * Places all spike blocks if initial generation flagged them for deferred placement.
+     * Called when a player enters the End — no-op if no regeneration is needed.
+     */
+    public static void regenerateSpikes(ServerLevel level) {
+        if (!needsRegeneration) return;
+        for (SpikeFeature.EndSpike spike : SpikeFeature.getSpikesForLevel(level)) {
+            placeSpike(level, spike, true);
+        }
+        needsRegeneration = false;
+        LOGGER.info("Regenerated all End spikes");
+    }
+
+    private static void placeSpike(ServerLevelAccessor level, SpikeFeature.EndSpike spike, boolean crystals) {
         RandomSource sr = spikeRandom(level, spike);
 
-        int cx = spike.getCenterX();
-        int cz = spike.getCenterZ();
+        int tipX = spike.getCenterX();
+        int tipZ = spike.getCenterZ();
+        int crystalBlockY = spike.getHeight();
+        int tipBaseY = crystalBlockY - TIP_STRUCTURE_HEIGHT;
 
-        int startY = findStartY(level, cx, cz, START_DEPTH);
-
-        // Use the (possibly adjusted) spike height from the cache loader.
-        int topY = Mth.clamp(spike.getHeight(), level.getMinY(), level.getMaxY() - 1);
-
-        int baseRadius = spike.getRadius();
-
-        float[] lean = outwardLean(cx, cz, MAX_LEAN_PER_Y, sr);
+        float[] lean = outwardLean(tipX, tipZ, MAX_LEAN_PER_Y, sr);
         float leanX = lean[0];
         float leanZ = lean[1];
 
-        TopInfo top = placeSpire(level, sr, cx, cz, startY, topY, baseRadius, leanX, leanZ);
+        int estimatedBodyHeight = Math.max(1, tipBaseY - 50);
+        int baseCenterX = tipX - Math.round(estimatedBodyHeight * leanX);
+        int baseCenterZ = tipZ - Math.round(estimatedBodyHeight * leanZ);
+        int highestSurface = findHighestSurface(level, baseCenterX, baseCenterZ, 10);
+        int startY = (highestSurface == level.getMinY())
+                ? Math.max(level.getMinY(), crystalBlockY - TIP_STRUCTURE_HEIGHT - 80)
+                : Math.max(level.getMinY(), highestSurface - START_DEPTH);
 
-        // top.topY is the bedrock Y; crystal sits one above it
-        BlockPos crystalPos = spawnCrystalAndTop(level, sr, cfg, top.topX, top.topY + 1, top.topZ);
+        int bodyHeight = Math.max(1, tipBaseY - startY);
+        int baseRadius = Mth.clamp(bodyHeight / 10 + 2, 4, 9);
 
-        if (spike.isGuarded() && crystalPos != null) {
-            placeHollowIronSphere(level, crystalPos, CAGE_RADIUS);
-            clearInsideSphere(level, crystalPos, CAGE_RADIUS - 1);
+        // Base center at startY (shifted from tip by lean)
+        float baseCxf = tipX - (tipBaseY - startY) * leanX;
+        float baseCzf = tipZ - (tipBaseY - startY) * leanZ;
+        placeIsland(level, baseCxf, baseCzf, startY, baseRadius + 2);
+        placeSpire(level, sr, tipX, tipZ, startY, tipBaseY, baseRadius, leanX, leanZ);
+        placeTipStructure(level, tipX, tipBaseY, tipZ);
+        if (crystals) {
+            spawnCrystal(level, sr, tipX, crystalBlockY, tipZ);
         }
     }
+
+    // ── Base island ────────────────────────────────────────────────────
+
+    private static void placeIsland(ServerLevelAccessor level, float cx, float cz, int topY, int topRadius) {
+        MutableBlockPos pos = new MutableBlockPos();
+        int depth = topRadius;
+
+        for (int dy = 0; dy <= depth; dy++) {
+            int y = topY - dy;
+            float t = dy / (float) depth;
+            // Hemisphere profile: radius shrinks as we go down
+            float r = topRadius * (float) Math.sqrt(1.0f - t * t);
+            if (r < 0.5f) break;
+
+            float r2 = r * r;
+            int minX = (int) Math.floor(cx - r - 1);
+            int maxX = (int) Math.ceil(cx + r + 1);
+            int minZ = (int) Math.floor(cz - r - 1);
+            int maxZ = (int) Math.ceil(cz + r + 1);
+
+            for (int x = minX; x <= maxX; x++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    float dx = (x + 0.5f) - cx;
+                    float dz = (z + 0.5f) - cz;
+                    if (dx * dx + dz * dz <= r2) {
+                        pos.set(x, y, z);
+                        level.setBlock(pos, Blocks.END_STONE.defaultBlockState(), 2);
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Spike body ──────────────────────────────────────────────────────
+
+    private static void placeSpire(
+            ServerLevelAccessor level,
+            RandomSource sr,
+            int tipX,
+            int tipZ,
+            int startY,
+            int tipBaseY,
+            int baseRadius,
+            float leanX,
+            float leanZ
+    ) {
+        MutableBlockPos pos = new MutableBlockPos();
+        int bodyHeight = Math.max(1, tipBaseY - startY);
+
+        for (int y = startY; y <= tipBaseY; y++) {
+            float t = (y - startY) / (float) bodyHeight;
+
+            // Lean: tip stays at (tipX, tipZ), base shifts inward toward origin
+            float cxf = tipX - (tipBaseY - y) * leanX;
+            float czf = tipZ - (tipBaseY - y) * leanZ;
+
+            int spineX = Mth.floor(cxf);
+            int spineZ = Mth.floor(czf);
+
+            // Taper: gradually narrows from baseRadius at bottom to single-block at top
+            float r = 0.5f + (baseRadius - 0.5f) * (float) Math.pow(1.0f - t, TAPER_EXPONENT);
+
+            // Always place the spine (center) block
+            pos.set(spineX, y, spineZ);
+            level.setBlock(pos, pickSpikeBlock(sr, y, tipBaseY), 2);
+
+            // Place cylindrical shell when wider than 1 block
+            if (r > 1.0f) {
+                int minX = (int) Math.floor(cxf - r - 1);
+                int maxX = (int) Math.ceil(cxf + r + 1);
+                int minZ = (int) Math.floor(czf - r - 1);
+                int maxZ = (int) Math.ceil(czf + r + 1);
+
+                float r2 = r * r;
+
+                for (int x = minX; x <= maxX; x++) {
+                    for (int z = minZ; z <= maxZ; z++) {
+                        float dx = (x + 0.5f) - cxf;
+                        float dz = (z + 0.5f) - czf;
+                        if (dx * dx + dz * dz <= r2) {
+                            pos.set(x, y, z);
+                            level.setBlock(pos, pickSpikeBlock(sr, y, tipBaseY), 2);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Tip structure ───────────────────────────────────────────────────
+
+    private static void placeTipStructure(ServerLevelAccessor level, int x, int tipBaseY, int z) {
+        MutableBlockPos pos = new MutableBlockPos();
+
+        // Center column
+        setBlock(level, pos, x, tipBaseY + 1, z, Blocks.OBSIDIAN.defaultBlockState());
+        setBlock(level, pos, x, tipBaseY + 2, z, Blocks.OBSIDIAN.defaultBlockState());
+        setBlock(level, pos, x, tipBaseY + 3, z, Blocks.CRYING_OBSIDIAN.defaultBlockState());
+        setBlock(level, pos, x, tipBaseY + 4, z, Blocks.REINFORCED_DEEPSLATE.defaultBlockState());
+        setBlock(level, pos, x, tipBaseY + 5, z, Blocks.BEDROCK.defaultBlockState());
+        setBlock(level, pos, x, tipBaseY + 6, z, Blocks.SOUL_FIRE.defaultBlockState());
+
+        // Cardinal sides of reinforced deepslate: upside-down stairs + candles above
+        for (Direction dir : new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST}) {
+            int sx = x + dir.getStepX();
+            int sz = z + dir.getStepZ();
+
+            BlockState stair = Blocks.DEEPSLATE_TILE_STAIRS.defaultBlockState()
+                    .setValue(BlockStateProperties.HORIZONTAL_FACING, dir.getOpposite())
+                    .setValue(BlockStateProperties.HALF, Half.TOP);
+            setBlock(level, pos, sx, tipBaseY + 4, sz, stair);
+
+            BlockState candle = Blocks.BLACK_CANDLE.defaultBlockState()
+                    .setValue(BlockStateProperties.LIT, false)
+                    .setValue(BlockStateProperties.CANDLES, 4);
+            setBlock(level, pos, sx, tipBaseY + 5, sz, candle);
+        }
+
+        // Diagonal corners: upper slab + lower slab above
+        int[][] diagonals = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+        for (int[] d : diagonals) {
+            int dx = x + d[0];
+            int dz = z + d[1];
+
+            BlockState upperSlab = Blocks.DEEPSLATE_TILE_SLAB.defaultBlockState()
+                    .setValue(BlockStateProperties.SLAB_TYPE, SlabType.TOP);
+            setBlock(level, pos, dx, tipBaseY + 4, dz, upperSlab);
+
+            BlockState lowerSlab = Blocks.DEEPSLATE_TILE_SLAB.defaultBlockState()
+                    .setValue(BlockStateProperties.SLAB_TYPE, SlabType.BOTTOM);
+            setBlock(level, pos, dx, tipBaseY + 5, dz, lowerSlab);
+        }
+    }
+
+    // ── Crystal spawning ────────────────────────────────────────────────
+
+    private static void spawnCrystal(ServerLevelAccessor level, RandomSource sr, int x, int crystalBlockY, int z) {
+        EndCrystal crystal = EntityType.END_CRYSTAL.create(level.getLevel(), EntitySpawnReason.STRUCTURE);
+        if (crystal == null) return;
+
+        crystal.setBeamTarget(null);
+        crystal.setInvulnerable(false);
+        crystal.setShowBottom(false);
+        crystal.snapTo(x + 0.5, crystalBlockY + 0.1, z + 0.5, sr.nextFloat() * 360.0F, 0.0F);
+        level.addFreshEntity(crystal);
+
+        CRYSTAL_LOCATIONS.add(crystal.position());
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────
 
     private static RandomSource spikeRandom(ServerLevelAccessor level, SpikeFeature.EndSpike spike) {
         long worldSeed = level.getLevel().getSeed();
@@ -82,96 +294,25 @@ public final class CustomEndSpikes {
         return new float[]{leanX, leanZ};
     }
 
-    private static int findStartY(ServerLevelAccessor level, int x, int z, int depth) {
-        int minY = level.getMinY();
-        int y = level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z);
-
-        MutableBlockPos pos = new MutableBlockPos();
-        while (y > minY) {
-            pos.set(x, y, z);
-            if (level.getBlockState(pos).is(Blocks.END_STONE)) {
-                return Math.max(minY, y - depth);
-            }
-            y--;
-        }
-        return minY;
-    }
-
-    private static TopInfo placeSpire(
-            ServerLevelAccessor level,
-            RandomSource sr,
-            int tipX,
-            int tipZ,
-            int startY,
-            int requestedTopY,
-            int baseRadius,
-            float leanX,
-            float leanZ
-    ) {
+    private static int findHighestSurface(ServerLevelAccessor level, int centerX, int centerZ, int searchRadius) {
+        int highest = level.getMinY();
         MutableBlockPos pos = new MutableBlockPos();
 
-        int height = Math.max(1, requestedTopY - startY);
-
-        // taper curve parameters
-        final float p = 2.4f;
-
-        int finalTopY = requestedTopY;
-        int finalTopX = tipX;
-        int finalTopZ = tipZ;
-
-        for (int y = startY; y <= requestedTopY; y++) {
-            float t = (y - startY) / (float) height;
-
-            // lean so that the tip lands at (tipX,tipZ)
-            float cxf = tipX - (requestedTopY - y) * leanX;
-            float czf = tipZ - (requestedTopY - y) * leanZ;
-
-            int spineX = Mth.floor(cxf);
-            int spineZ = Mth.floor(czf);
-
-            // radius function; approaches 0 near the top
-            float r = baseRadius * (float) Math.pow(1.0f - t, p);
-
-            // when we'd become a needle, stop early and place bedrock as the cap
-            if (r <= TIP_STOP_RADIUS) {
-                finalTopY = y;
-                finalTopX = spineX;
-                finalTopZ = spineZ;
-                break;
-            }
-
-            // place core/spine
-            pos.set(spineX, y, spineZ);
-            level.setBlock(pos, pickSpikeBlock(sr, y, requestedTopY), 2);
-
-            int minX = (int) Math.floor(cxf - r - 1);
-            int maxX = (int) Math.ceil (cxf + r + 1);
-            int minZ = (int) Math.floor(czf - r - 1);
-            int maxZ = (int) Math.ceil (czf + r + 1);
-
-            float r2 = r * r;
-
-            for (int x = minX; x <= maxX; x++) {
-                for (int z = minZ; z <= maxZ; z++) {
-                    float dx = (x + 0.5f) - cxf;
-                    float dz = (z + 0.5f) - czf;
-                    if (dx * dx + dz * dz <= r2) {
-                        pos.set(x, y, z);
-                        level.setBlock(pos, pickSpikeBlock(sr, y, requestedTopY), 2);
+        for (int x = centerX - searchRadius; x <= centerX + searchRadius; x++) {
+            for (int z = centerZ - searchRadius; z <= centerZ + searchRadius; z++) {
+                int y = level.getHeight(Heightmap.Types.WORLD_SURFACE_WG, x, z);
+                while (y > highest) {
+                    pos.set(x, y, z);
+                    if (level.getBlockState(pos).is(Blocks.END_STONE)) {
+                        highest = y;
+                        break;
                     }
+                    y--;
                 }
             }
         }
 
-        // Reserve the very top as a single bedrock cap (no mixed blocks)
-        pos.set(finalTopX, finalTopY, finalTopZ);
-        level.setBlock(pos, pickSpikeBlock(sr, 1, 1), 2);
-        level.setBlock(pos.below(1), pickSpikeBlock(sr, 1, 1), 2);
-        level.setBlock(pos.below(2), pickSpikeBlock(sr, 1, 1), 2);
-        level.setBlock(pos.below(3), pickSpikeBlock(sr, 1, 1), 2);
-        level.setBlock(pos.above(), Blocks.BEDROCK.defaultBlockState(), 2);
-
-        return new TopInfo(finalTopX, finalTopY + 1, finalTopZ);
+        return highest;
     }
 
     private static BlockState pickSpikeBlock(RandomSource sr, int y, int topY) {
@@ -179,59 +320,8 @@ public final class CustomEndSpikes {
         return Blocks.OBSIDIAN.defaultBlockState();
     }
 
-    private static BlockPos spawnCrystalAndTop(ServerLevelAccessor level, RandomSource sr, SpikeConfiguration cfg, int x, int y, int z) {
-        EndCrystal crystal = EntityType.END_CRYSTAL.create(level.getLevel(), EntitySpawnReason.STRUCTURE);
-        if (crystal == null) return null;
-
-        crystal.setBeamTarget(null);
-        crystal.setInvulnerable(false);
-        crystal.snapTo(x + 0.5, y, z + 0.5, sr.nextFloat() * 360.0F, 0.0F);
-        level.addFreshEntity(crystal);
-
-        CRYSTAL_LOCATIONS.add(crystal.position());
-
-        BlockPos p = crystal.blockPosition();
-        // bedrock is already the top block; we place fire at crystal position only
-        level.setBlock(p, Blocks.SOUL_FIRE.defaultBlockState(), 2);
-        return p;
+    private static void setBlock(ServerLevelAccessor level, MutableBlockPos pos, int x, int y, int z, BlockState state) {
+        pos.set(x, y, z);
+        level.setBlock(pos, state, 2);
     }
-
-    private static void placeHollowIronSphere(ServerLevelAccessor level, BlockPos center, int radius) {
-        MutableBlockPos pos = new MutableBlockPos();
-        int r2 = radius * radius;
-        int inner2 = (radius - 1) * (radius - 1);
-
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dy = -radius; dy <= radius; dy++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    int d2 = dx * dx + dy * dy + dz * dz;
-                    if (d2 <= r2 && d2 >= inner2) {
-                        pos.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
-                        level.setBlock(pos, Blocks.IRON_BARS.defaultBlockState(), 2);
-                    }
-                }
-            }
-        }
-    }
-
-    private static void clearInsideSphere(ServerLevelAccessor level, BlockPos center, int radius) {
-        MutableBlockPos pos = new MutableBlockPos();
-        int r2 = radius * radius;
-
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dy = -radius; dy <= radius; dy++) {
-                for (int dz = -radius; dz <= radius; dz++) {
-                    int d2 = dx * dx + dy * dy + dz * dz;
-                    if (d2 <= r2) {
-                        pos.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
-                        if (!pos.equals(center)) {
-                            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private record TopInfo(int topX, int topY, int topZ) {}
 }
