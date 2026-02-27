@@ -27,6 +27,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -178,7 +179,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
         this.reallyHurt(serverLevel, source, finalDamage);
     }
 
-    @ModifyConstant(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z", constant = @org.spongepowered.asm.mixin.injection.Constant(floatValue = 0.25F))
+    @ModifyConstant(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z", constant = @Constant(floatValue = 0.25F))
     private float customTakeoffThreshold(float original) {
         EnderDragon dragon = self();
 
@@ -189,7 +190,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
         return threshold / max;
     }
 
-    @ModifyConstant(method = "checkCrystals()V", constant = @org.spongepowered.asm.mixin.injection.Constant(floatValue = 1.0F))
+    @ModifyConstant(method = "checkCrystals()V", constant = @Constant(floatValue = 1.0F))
     private float customCrystalHeal(float original) {
         int ticksSinceLastHurt = tickCount - getLastHurtByMobTimestamp();
         double playerCount = Math.max(nearbyPlayerCount(), 1);
@@ -221,8 +222,18 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
         return original * 1.7F * attackManager.getTurnSpeedMultiplier();
     }
 
-    @ModifyConstant(method = "aiStep()V", constant = @org.spongepowered.asm.mixin.injection.Constant(floatValue = 0.06F))
+    @ModifyConstant(method = "aiStep()V", constant = @Constant(floatValue = 0.06F))
     private float forwardMovement(float original) {
         return original * 1.7F * attackManager.getSpeedMultiplier();
+    }
+
+    @ModifyConstant(method = "checkCrystals()V", constant = @Constant(doubleValue = 32.0))
+    private double increaseCrystalRange(double original) {
+        return 128.0;
+    }
+
+    @ModifyConstant(method = "onCrystalDestroyed", constant = @Constant(floatValue = 10.0F))
+    private float increaseCrystalDamage(float original) {
+        return 25.0F;
     }
 }
