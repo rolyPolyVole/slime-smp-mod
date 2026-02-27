@@ -51,7 +51,7 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
             playSound(it, SoundEvents.FLINTANDSTEEL_USE, pitch = 2.0F)
         }
 
-        if (ticks < 60) return
+        if (ticks < 50) return
 
         playEffect()
 
