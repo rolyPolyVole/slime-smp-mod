@@ -113,6 +113,9 @@ public final class CustomEndSpikes {
         placeIsland(level, baseCxf, baseCzf, startY, baseRadius + 2);
         placeSpire(level, sr, tipX, tipZ, startY, tipBaseY, baseRadius, leanX, leanZ);
         placeTipStructure(level, tipX, tipBaseY, tipZ);
+        if (spike.isGuarded()) {
+            placeCage(level, tipX, crystalBlockY, tipZ, 4);
+        }
         if (crystals) {
             spawnCrystal(level, sr, tipX, crystalBlockY, tipZ);
         }
@@ -248,6 +251,28 @@ public final class CustomEndSpikes {
             BlockState lowerSlab = Blocks.DEEPSLATE_TILE_SLAB.defaultBlockState()
                     .setValue(BlockStateProperties.SLAB_TYPE, SlabType.BOTTOM);
             setBlock(level, pos, dx, tipBaseY + 5, dz, lowerSlab);
+        }
+    }
+
+    // ── Iron bar cage ────────────────────────────────────────────────────
+
+    private static void placeCage(ServerLevelAccessor level, int cx, int cy, int cz, int radius) {
+        MutableBlockPos pos = new MutableBlockPos();
+        float innerR2 = (radius - 0.5f) * (radius - 0.5f);
+        float outerR2 = (radius + 0.5f) * (radius + 0.5f);
+
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dy = -radius; dy <= radius; dy++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    float dist2 = dx * dx + dy * dy + dz * dz;
+                    if (dist2 >= innerR2 && dist2 <= outerR2) {
+                        pos.set(cx + dx, cy + dy, cz + dz);
+                        if (level.getBlockState(pos).isAir()) {
+                            level.setBlock(pos, Blocks.IRON_BARS.defaultBlockState(), 3);
+                        }
+                    }
+                }
+            }
         }
     }
 
