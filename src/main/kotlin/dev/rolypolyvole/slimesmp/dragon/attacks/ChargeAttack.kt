@@ -1,10 +1,12 @@
 package dev.rolypolyvole.slimesmp.dragon.attacks
 
+import dev.rolypolyvole.slimesmp.util.xz
 import net.minecraft.commands.arguments.EntityAnchorArgument
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.*
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.Vec3
 import kotlin.reflect.KClass
 
@@ -88,9 +90,9 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
     override fun start(): Boolean {
         this.target = level.players()
-            .filter { !it.isCreative && !it.isSpectator && it.isAlive }
-            .filter { it.position().distanceToSqr(dragon.position()) in 900.0..22500.0 }
-            .randomOrNull() ?: run { this.shouldEnd = true; return false }
+            .filter(::isTargetValid)
+            .randomOrNull()
+            ?: run { this.shouldEnd = true; return false }
 
         this.targetLocation = this.getTargetLocation()
 
@@ -104,6 +106,10 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
     override fun end() {
     }
+
+    private fun isTargetValid(player: Player): Boolean =
+        !player.isCreative && !player.isSpectator && player.isAlive &&
+        player.position().xz().distanceToSqr(dragon.position().xz()) in 625.0..22500.0
 
     private fun getTargetLocation(): Vec3 {
         val dragonPos = dragon.position()
