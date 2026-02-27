@@ -96,12 +96,13 @@ class DragonBomb(level: Level, private val dragon: EnderDragon) : Marker(EntityT
     }
 
     private fun createDisplay(): NonPersistentBlockDisplay {
-        val display = NonPersistentBlockDisplay(level())
-
-        display.setPos(x, y, z)
-        display.blockState = net.minecraft.world.level.block.Blocks.DRAGON_HEAD.defaultBlockState()
-        display.brightnessOverride = Brightness(15, 15)
-        display.setTransformation(createTransformation(0f))
+        val display = NonPersistentBlockDisplay(level()).apply {
+            setPos(x, y, z)
+            blockState = net.minecraft.world.level.block.Blocks.DRAGON_HEAD.defaultBlockState()
+            brightnessOverride = Brightness(15, 15)
+            glowColorOverride = 0xFF00FF
+            setTransformation(createTransformation(0f))
+        }
 
         level().addFreshEntity(display)
         display.startRiding(this)
