@@ -43,7 +43,7 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         if (!reachedOutpost) return
 
         if (this.ticks++ == 0) {
-            dragon.phaseManager.setPhase(EnderDragonPhase.HOVERING)
+            hover()
             broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
         }
 
@@ -84,9 +84,7 @@ class LightningAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     override fun start(): Boolean {
         this.outpost = this.getOutpostLocation()
 
-        dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
-        dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(outpost)
-
+        chargeTowards(outpost)
         broadcastSound(SoundEvents.LIGHTNING_BOLT_THUNDER)
 
         return true

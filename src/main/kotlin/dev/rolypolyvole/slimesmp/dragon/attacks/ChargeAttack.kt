@@ -107,16 +107,14 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
         this.targetLocation = this.getTargetLocation()
 
-        dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
-        dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(targetLocation!!)
-
+        chargeTowards(targetLocation!!)
         broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
 
         return true
     }
 
     override fun end() {
-        this.dragon.phaseManager.setPhase(EnderDragonPhase.HOLDING_PATTERN)
+        restoreNormalPhase()
     }
 
     private fun isTargetValid(player: Player): Boolean =

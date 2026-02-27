@@ -8,9 +8,13 @@ import net.minecraft.sounds.SoundEvent
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase
+import net.minecraft.world.phys.Vec3
 import kotlin.reflect.KClass
 
 abstract class AbstractDragonAttack(protected val dragon: EnderDragon) {
+    private val phaseManager = dragon.phaseManager
+
     protected val level: ServerLevel
         get() = dragon.level() as ServerLevel
 
@@ -32,6 +36,14 @@ abstract class AbstractDragonAttack(protected val dragon: EnderDragon) {
 
         player.connection.send(packet)
     }
+
+    protected fun chargeTowards(target: Vec3) {
+        phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
+        phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(target)
+    }
+
+    protected fun hover() = phaseManager.setPhase(EnderDragonPhase.HOVERING)
+    protected fun restoreNormalPhase() = phaseManager.setPhase(EnderDragonPhase.HOLDING_PATTERN)
 
     abstract fun tick()
     open fun beforeMove() {}
