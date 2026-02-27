@@ -72,7 +72,7 @@ class DragonBomb(level: Level, private val dragon: EnderDragon) : Marker(EntityT
             x, groundY, z,
             5.5F,
             false,
-            Level.ExplosionInteraction.TNT
+            Level.ExplosionInteraction.NONE
         )
 
         remove(RemovalReason.DISCARDED)
