@@ -101,6 +101,7 @@ class DragonBomb(level: Level, private val dragon: EnderDragon) : Marker(EntityT
             blockState = net.minecraft.world.level.block.Blocks.DRAGON_HEAD.defaultBlockState()
             brightnessOverride = Brightness(15, 15)
             glowColorOverride = 0xFF00FF
+            setGlowingTag(true)
             setTransformation(createTransformation(0f))
         }
 
