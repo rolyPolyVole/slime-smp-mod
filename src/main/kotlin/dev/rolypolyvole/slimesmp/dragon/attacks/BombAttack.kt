@@ -8,8 +8,6 @@ import net.minecraft.world.phys.Vec3
 import kotlin.reflect.KClass
 
 class BombAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
-    private val random: Double; get() = Math.random()
-
     private var lifetime = (240..280).random()
     private var nextBomb = (12..30).random()
 
@@ -50,7 +48,7 @@ class BombAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     }
 
     override fun start(): Boolean {
-        broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
+        broadcastSound(SoundEvents.ENDER_DRAGON_GROWL, pitch = 0.8F + random * 0.3F)
         return true
     }
 

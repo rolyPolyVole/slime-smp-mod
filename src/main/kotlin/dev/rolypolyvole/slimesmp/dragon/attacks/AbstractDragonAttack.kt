@@ -15,6 +15,8 @@ import kotlin.reflect.KClass
 abstract class AbstractDragonAttack(protected val dragon: EnderDragon) {
     private val phaseManager = dragon.phaseManager
 
+    protected val random: Float; get() = Math.random().toFloat()
+
     protected val level: ServerLevel
         get() = dragon.level() as ServerLevel
 

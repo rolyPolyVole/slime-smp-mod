@@ -61,8 +61,7 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
                     this.targetLocation = newTarget
                     this.direction = targetLocation!!.subtract(dragon.position()).normalize()
 
-                    dragon.phaseManager.setPhase(EnderDragonPhase.CHARGING_PLAYER)
-                    dragon.phaseManager.getPhase(EnderDragonPhase.CHARGING_PLAYER).setTarget(targetLocation!!)
+                    chargeTowards(targetLocation!!)
                 }
             }
         }
@@ -79,6 +78,8 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
                 val newDirection = Vec3(horizontal.x, 1.0, horizontal.z).normalize()
 
                 this.targetLocation = dragon.position().add(newDirection.scale(50.0))
+
+                chargeTowards(targetLocation!!)
             }
         }
 
@@ -108,7 +109,7 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         this.targetLocation = this.getTargetLocation()
 
         chargeTowards(targetLocation!!)
-        broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
+        broadcastSound(SoundEvents.ENDER_DRAGON_GROWL, pitch = 0.8F + random * 0.3F)
 
         return true
     }
@@ -125,6 +126,6 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         val dragonPos = dragon.position()
         val followThrough = target!!.position().subtract(dragonPos).normalize().scale(10.0)
 
-        return target!!.position().add(followThrough)
+        return target!!.position().subtract(0.0, 0.5, 0.0).add(followThrough)
     }
 }

@@ -28,9 +28,6 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         }
     }
 
-    private val random: Double
-        get() = Math.random()
-
     private lateinit var outpost: Vec3
     private var reachedOutpost = false
 
@@ -52,7 +49,7 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
         if (ticks == 0) {
             hover()
-            broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
+            broadcastSound(SoundEvents.ENDER_DRAGON_GROWL, pitch = 0.8F + random * 0.3F)
         }
 
         if (ticks++ < 40) return
@@ -117,7 +114,7 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         this.outpost = this.getOutpostLocation()
 
         chargeTowards(outpost)
-        broadcastSound(SoundEvents.ENDER_DRAGON_GROWL)
+        broadcastSound(SoundEvents.ENDER_DRAGON_GROWL, pitch = 0.8F + random * 0.3F)
 
         return true
     }
