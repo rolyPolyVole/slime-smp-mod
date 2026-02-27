@@ -14,6 +14,7 @@ import net.minecraft.world.phys.Vec3
 import org.joml.Matrix4f
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import kotlin.math.sqrt
 
 class DragonBomb(level: Level, private val dragon: EnderDragon) : Marker(EntityType.MARKER, level) {
     private val display: NonPersistentBlockDisplay = createDisplay()
@@ -32,6 +33,7 @@ class DragonBomb(level: Level, private val dragon: EnderDragon) : Marker(EntityT
         super.tick()
 
         applyDownwardsAcceleration()
+        homeTowardsPlayer()
         move()
 
         if (isCollidingWithGround()) {
@@ -48,6 +50,21 @@ class DragonBomb(level: Level, private val dragon: EnderDragon) : Marker(EntityT
     }
 
     override fun shouldBeSaved() = false
+
+    private fun homeTowardsPlayer() {
+        val serverLevel = level() as? ServerLevel ?: return
+        val nearest = serverLevel.players()
+            .filter { !it.isCreative && !it.isSpectator && it.isAlive }
+            .minByOrNull { it.distanceToSqr(this) } ?: return
+
+        val dx = nearest.x - this.x
+        val dz = nearest.z - this.z
+        val dist = sqrt(dx * dx + dz * dz)
+        if (dist < 0.1) return
+
+        val force = 0.02
+        this.velocity = velocity.add(dx / dist * force, 0.0, dz / dist * force)
+    }
 
     private fun applyDownwardsAcceleration() {
         this.velocity = velocity.add(0.0, -0.04, 0.0)
