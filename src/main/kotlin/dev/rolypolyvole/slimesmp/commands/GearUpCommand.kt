@@ -65,14 +65,13 @@ class GearUpCommand {
         player.inventory.add(ItemStack(Items.GOLDEN_APPLE, 64))
         player.inventory.add(ItemStack(Items.COBBLESTONE, 64))
         player.inventory.add(ItemStack(Items.COBBLESTONE, 64))
-        player.inventory.add(ItemStack(Items.COBBLESTONE, 64))
         player.inventory.add(ItemStack(Items.TOTEM_OF_UNDYING))
-        player.inventory.add(ItemStack(Items.TOTEM_OF_UNDYING))
+        player.setItemSlot(EquipmentSlot.OFFHAND, ItemStack(Items.TOTEM_OF_UNDYING))
+        player.inventory.add(ItemStack(Items.END_CRYSTAL, 64))
         player.inventory.add(ItemStack(Items.WATER_BUCKET))
         player.inventory.add(ItemStack(Items.ARROW, 64))
         player.inventory.add(ItemStack(Items.ARROW, 64))
         player.inventory.add(ItemStack(Items.ARROW, 64))
-        player.inventory.add(ItemStack(Items.END_CRYSTAL, 64))
 
         source.sendSuccess({ Component.literal("You have been given maxed gear!").withColor(0x55FF55) }, false)
 
