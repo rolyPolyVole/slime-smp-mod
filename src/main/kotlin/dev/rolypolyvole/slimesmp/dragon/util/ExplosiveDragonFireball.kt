@@ -46,7 +46,7 @@ class ExplosiveDragonFireball(level: Level, owner: LivingEntity, direction: Vec3
             pos.x, pos.y, pos.z,
             3.0f,
             false,
-            Level.ExplosionInteraction.NONE
+            Level.ExplosionInteraction.MOB
         )
     }
 
