@@ -20,6 +20,8 @@ import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhaseManage
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.dimension.end.EndDragonFight;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -48,6 +50,8 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     @Shadow
     protected abstract void reallyHurt(ServerLevel serverLevel, DamageSource damageSource, float f);
 
+    @Shadow
+    private @Nullable EndDragonFight dragonFight;
     @Final @Shadow
     public EnderDragonPart head;
     @Unique
@@ -196,7 +200,7 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
         double playerCount = Math.max(nearbyPlayerCount(), 1);
         int threshold = (int) (100 + 150 / Math.sqrt(playerCount));
 
-        return ticksSinceLastHurt > threshold ? 8.0F : 2.0F;
+        return ticksSinceLastHurt > threshold ? 8.0F : 1.2F;
     }
 
     @Redirect(method = "aiStep()V", at = @At(value = "FIELD", target = "Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;hurtTime:I", opcode = Opcodes.GETFIELD), require = 1)
