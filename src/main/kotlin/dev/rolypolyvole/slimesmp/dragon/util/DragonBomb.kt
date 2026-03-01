@@ -122,6 +122,7 @@ class DragonBomb(level: Level, private val dragon: EnderDragon) : Marker(EntityT
     private fun playParticles() {
         (level() as ServerLevel).sendParticles(
             PowerParticleOption.create(ParticleTypes.DRAGON_BREATH, 1.0f),
+            true, true,
             x, y, z,
             1, 0.0, 0.0, 0.0, 0.0
         )
