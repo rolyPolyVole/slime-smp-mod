@@ -35,6 +35,8 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     private var resurfacing = false
     private var shouldEnd = false
 
+    var speedMultiplier: Double = 1.0
+
     override fun tick() {
         this.ticks++
 
@@ -85,7 +87,7 @@ class ChargeAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
 
         val to = (targetLocation ?: return).subtract(dragon.position())
         val movement = to.normalize()
-        val speed = if (resurfacing) 1.2 else 1.8
+        val speed = (if (resurfacing) 1.2 else 1.8) * speedMultiplier
 
         dragon.deltaMovement = movement.scale(speed)
     }

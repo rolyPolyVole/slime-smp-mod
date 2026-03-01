@@ -5,14 +5,11 @@ import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 
 class DragonAttackManager(private val dragon: EnderDragon) {
     private val attacks = listOf(
-        ChargeAttack.ChargeAttackType,
-        ChargeAttack.ChargeAttackType,
-        ChargeAttack.ChargeAttackType,
-        FireballAttack.FireballAttackType,
-        LightningAttack.LightningAttackType,
-        BombAttack.BombAttackType,
-        BombAttack.BombAttackType
-    )
+        List(12) { ChargeAttack.ChargeAttackType },
+        List(5) { FireballAttack.FireballAttackType },
+        List(4) { LightningAttack.LightningAttackType },
+        List(3) { EnragedChargeAttack.EnragedChargeAttackType }
+    ).flatten()
 
     private var currentAttack: AbstractDragonAttack? = null
     private var lastAttack: AbstractDragonAttack? = null
