@@ -58,7 +58,7 @@ class ExplosiveDragonFireball(level: Level, owner: LivingEntity, direction: Vec3
             damageSources().explosion(this, dragon),
             null,
             pos.x, pos.y, pos.z,
-            2.0F + (0.7 * Math.random()).toFloat(),
+            2.5F,
             false,
             Level.ExplosionInteraction.MOB
         )
