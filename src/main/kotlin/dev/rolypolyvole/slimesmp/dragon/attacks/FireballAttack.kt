@@ -148,13 +148,7 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     }
 
     private fun spawnMouthBreathParticles() {
-        val mouth = //if (target != null) {
-            //val facing = target!!.position().subtract(dragon.position()).normalize()
-            //val mouthOffset = facing.multiply(1.0, 0.0, 1.0).normalize().scale(6.5)
-          //  dragon.position().add(mouthOffset).subtract(0.0, 0.5, 0.0)
-        //} else {
-            Vec3(dragon.head.x, dragon.head.getY(0.5), dragon.head.z)
-        //}
+        val mouth = Vec3(dragon.head.x, dragon.head.getY(0.5), dragon.head.z)
 
         val radius = 0.7
 
