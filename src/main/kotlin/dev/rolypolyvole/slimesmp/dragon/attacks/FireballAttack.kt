@@ -143,7 +143,7 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     private fun smoothLookAt(targetPos: Vec3) {
         val dx = targetPos.x - dragon.x
         val dz = targetPos.z - dragon.z
-        val targetYaw = (atan2(dx, dz) * (180.0 / Math.PI)).toFloat()
+        val targetYaw = 180.0F - (atan2(dx, dz) * (180.0 / Math.PI)).toFloat()
         dragon.yRot = Mth.approachDegrees(dragon.yRot, targetYaw, 9.0f)
     }
 
