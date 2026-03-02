@@ -91,14 +91,12 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
 
     @Inject(method = "aiStep()V", at = @At("TAIL"))
     private void tick(CallbackInfo info) {
-        if (this.level().isClientSide()) return;
+        if (isDeadOrDying()) return;
 
         updateMaxHealth();
 
-        if (!isDeadOrDying()) {
-            if (attackManager != null) attackManager.tick();
-            if (abilityManager != null) abilityManager.tick();
-        }
+        if (attackManager != null) attackManager.tick();
+        if (abilityManager != null) abilityManager.tick();
     }
 
     @Unique
