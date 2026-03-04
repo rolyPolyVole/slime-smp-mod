@@ -91,12 +91,17 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
 
     @Inject(method = "aiStep()V", at = @At("TAIL"))
     private void tick(CallbackInfo info) {
-        if (isDeadOrDying()) return;
+        if (getHealth() <= 1.0F) return;
 
         updateMaxHealth();
 
         if (attackManager != null) attackManager.tick();
         if (abilityManager != null) abilityManager.tick();
+    }
+
+    @Inject(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V", shift = At.Shift.BEFORE))
+    private void beforeMove(CallbackInfo info) {
+        if (attackManager != null && getHealth() > 1.0F) attackManager.onBeforeMove();
     }
 
     @Unique
@@ -110,13 +115,6 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
         float healthPercent = this.getHealth() / (float) oldMax;
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(newMax);
         this.setHealth(healthPercent * (float) newMax);
-    }
-
-    @Inject(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V", shift = At.Shift.BEFORE))
-    private void beforeMove(CallbackInfo info) {
-        if (this.level().isClientSide()) return;
-
-        if (attackManager != null && !isDeadOrDying()) attackManager.onBeforeMove();
     }
 
     @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Ljava/util/List;)V", at = @At("HEAD"), cancellable = true)
