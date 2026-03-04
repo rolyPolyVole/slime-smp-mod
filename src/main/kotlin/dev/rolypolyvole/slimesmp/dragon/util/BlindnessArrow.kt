@@ -5,9 +5,9 @@ import net.minecraft.core.particles.PowerParticleOption
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.effect.MobEffects
-import net.minecraft.world.entity.EntitySpawnReason
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.entity.monster.Endermite
 import net.minecraft.world.entity.projectile.arrow.Arrow
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
@@ -18,6 +18,22 @@ class BlindnessArrow(
     pickupItem: ItemStack,
     weapon: ItemStack?
 ) : Arrow(level, shooter, pickupItem, weapon) {
+
+    class PhantomMite(level: Level) : Endermite(EntityType.ENDERMITE, level) {
+        override fun canBeHitByProjectile(): Boolean = false
+        override fun tick() {
+            val vehicle = this.vehicle
+            this.noPhysics = vehicle is Arrow && !vehicle.onGround()
+
+            super.tick()
+        }
+    }
+
+    init {
+        if (Math.random() < 0.05) {
+            PhantomMite(level()).startRiding(this)
+        }
+    }
 
     override fun shouldBeSaved(): Boolean = false
 
@@ -42,15 +58,8 @@ class BlindnessArrow(
 
         target.addEffect(MobEffectInstance(MobEffects.WITHER, 85, 1))
 
-        if (Math.random() < 0.1) {
-            if (Math.random() < 0.5) {
-                target.addEffect(MobEffectInstance(MobEffects.DARKNESS, 85, 0))
-            } else {
-                EntityType.ENDERMITE.create(target.level(), EntitySpawnReason.EVENT)?.let {
-                    it.snapTo(target.eyePosition)
-                    it.target = target
-                }
-            }
+        if (Math.random() < 0.05) {
+            target.addEffect(MobEffectInstance(MobEffects.DARKNESS, 85, 0))
         }
     }
 }
