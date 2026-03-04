@@ -1,6 +1,5 @@
 package dev.rolypolyvole.slimesmp.dragon
 
-import dev.rolypolyvole.slimesmp.dragon.util.PhantomRiderSpawner
 import dev.rolypolyvole.slimesmp.worldgen.CustomEndSpikes
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
@@ -20,10 +19,11 @@ class DragonAbilityManager(private val dragon: EnderDragon) {
 
     private var ticks = 0
     private var ticksUntilCrystalRespawn = 500
-    private var ticksUntilMobSpawn = (100..200).random()
 
     fun tick () {
         this.ticks++
+
+        if (dragon.isDeadOrDying) return
 
         if (ticksUntilCrystalRespawn > 0) {
             this.ticksUntilCrystalRespawn--
@@ -35,12 +35,6 @@ class DragonAbilityManager(private val dragon: EnderDragon) {
             this.ticksUntilCrystalRespawn = base + (getTotalCrystals() * 40)
         }
 
-        if (ticksUntilMobSpawn > 0) {
-            this.ticksUntilMobSpawn--
-        } else {
-            spawnPhantomRider()
-            this.ticksUntilMobSpawn = (100..200).random()
-        }
     }
 
     private fun nearbyPlayers(): List<ServerPlayer> {
@@ -63,28 +57,6 @@ class DragonAbilityManager(private val dragon: EnderDragon) {
 
         nearbyPlayers().forEach {
             it.sendSystemMessage(Component.literal("An End Crystal has respawned!").withColor(0xFF55FF))
-        }
-    }
-
-    private fun spawnPhantomRider() {
-        val crystalPos = CustomEndSpikes.getCrystalLocations(level)
-            .filter(::doesCrystalExist)
-            .randomOrNull() ?: return
-
-        val spawnPos = crystalPos.add(0.0, 5.0, 0.0)
-
-        if (Math.random() < 0.5) {
-            PhantomRiderSpawner.spawnArcher(level, spawnPos)
-
-            nearbyPlayers().forEach {
-                it.sendSystemMessage(Component.literal("A Phantom Archer descends from the sky...").withColor(0xFF00DD))
-            }
-        } else {
-            PhantomRiderSpawner.spawnHoplite(level, spawnPos)
-
-            nearbyPlayers().forEach {
-                it.sendSystemMessage(Component.literal("A Phantom Hoplite emerges from the void...").withColor(0xFF00BB))
-            }
         }
     }
 
