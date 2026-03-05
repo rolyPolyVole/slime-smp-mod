@@ -57,9 +57,11 @@ open class DragonSkeleton(level: Level) : Skeleton(EntityType.SKELETON, level) {
 
         val level = this.level()
         if (level is ServerLevel) {
+            val gravityCompensation = horizontalDist * 0.2 + dy.coerceAtLeast(0.0) * 0.15
+
             Projectile.spawnProjectileUsingShoot(
                 arrow, level, ItemStack(Items.ARROW),
-                dx, dy + horizontalDist * 0.2, dz,
+                dx, dy + gravityCompensation, dz,
                 3.0F, 0.0F
             )
         }
