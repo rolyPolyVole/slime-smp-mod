@@ -1,6 +1,10 @@
 package dev.rolypolyvole.slimesmp.dragon
 
+import dev.rolypolyvole.slimesmp.dragon.entities.CrystalProtector
+import dev.rolypolyvole.slimesmp.util.highestBlockY
 import dev.rolypolyvole.slimesmp.worldgen.CustomEndSpikes
+import net.minecraft.core.BlockPos
+import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -19,6 +23,7 @@ class DragonAbilityManager(private val dragon: EnderDragon) {
 
     private var ticks = 0
     private var ticksUntilCrystalRespawn = 500
+    private var ticksUntilHunterSpawn = (100..200).random()
 
     fun tick () {
         this.ticks++
@@ -35,6 +40,14 @@ class DragonAbilityManager(private val dragon: EnderDragon) {
             this.ticksUntilCrystalRespawn = base + (getTotalCrystals() * 40)
         }
 
+        if (ticksUntilHunterSpawn > 0) {
+            this.ticksUntilHunterSpawn--
+        } else {
+            spawnCrystalHunter()
+
+            val playerCount = nearbyPlayers().size.coerceAtLeast(1)
+            this.ticksUntilHunterSpawn = (1200..2000).random() + (400 / sqrt(playerCount.toDouble())).toInt()
+        }
     }
 
     private fun nearbyPlayers(): List<ServerPlayer> {
@@ -57,6 +70,35 @@ class DragonAbilityManager(private val dragon: EnderDragon) {
 
         nearbyPlayers().forEach {
             it.sendSystemMessage(Component.literal("An End Crystal has respawned!").withColor(0xFF55FF))
+        }
+    }
+
+    private fun spawnCrystalHunter() {
+        val offsetX = ((-40..40).random()).toDouble()
+        val offsetZ = ((-40..40).random()).toDouble()
+        val spawnX = dragon.fightOrigin.x + offsetX
+        val spawnZ = dragon.fightOrigin.z + offsetZ
+        val groundY = BlockPos(spawnX.toInt(), 0, spawnZ.toInt()).highestBlockY(level).y.toDouble()
+
+        val protector = CrystalProtector(level)
+        protector.setPos(spawnX, groundY, spawnZ)
+        protector.spawnWithMount(level)
+
+        EntityType.LIGHTNING_BOLT.create(level, EntitySpawnReason.MOB_SUMMONED)?.let {
+            it.snapTo(spawnX, groundY, spawnZ, 0f, 0f)
+            it.setVisualOnly(true)
+            level.addFreshEntity(it)
+        }
+
+        level.sendParticles(
+            ParticleTypes.EXPLOSION_EMITTER,
+            true, true,
+            spawnX, groundY + 1.0, spawnZ,
+            1, 0.0, 0.0, 0.0, 0.0
+        )
+
+        nearbyPlayers().forEach {
+            it.sendSystemMessage(Component.literal("A Crystal Protector has appeared!").withColor(0xAA00AA))
         }
     }
 

@@ -14,7 +14,7 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.level.Level
 import kotlin.math.sqrt
 
-class DragonSkeleton(level: Level) : Skeleton(EntityType.SKELETON, level) {
+open class DragonSkeleton(level: Level) : Skeleton(EntityType.SKELETON, level) {
 
     override fun shouldBeSaved(): Boolean = false
 
@@ -35,7 +35,7 @@ class DragonSkeleton(level: Level) : Skeleton(EntityType.SKELETON, level) {
     }
 
     override fun registerGoals() {
-        goalSelector.addGoal(2, SpearUseGoal(this, 1.0, 1.0, 30.0F, 2.0F))
+        goalSelector.addGoal(2, SpearUseGoal(this, 1.0, 1.0, 10.0F, 2.0F))
         super.registerGoals()
     }
 
