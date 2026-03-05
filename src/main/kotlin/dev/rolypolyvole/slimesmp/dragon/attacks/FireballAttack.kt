@@ -1,6 +1,6 @@
 package dev.rolypolyvole.slimesmp.dragon.attacks
 
-import dev.rolypolyvole.slimesmp.dragon.util.ExplosiveDragonFireball
+import dev.rolypolyvole.slimesmp.dragon.entities.ExplosiveDragonFireball
 import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.core.particles.PowerParticleOption
 import net.minecraft.server.level.ServerPlayer

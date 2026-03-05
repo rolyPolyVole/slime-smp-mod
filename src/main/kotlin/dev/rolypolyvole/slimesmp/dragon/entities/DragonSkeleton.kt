@@ -1,4 +1,4 @@
-package dev.rolypolyvole.slimesmp.dragon.util
+package dev.rolypolyvole.slimesmp.dragon.entities
 
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents

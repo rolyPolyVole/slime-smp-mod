@@ -1,6 +1,6 @@
 package dev.rolypolyvole.slimesmp.dragon.attacks
 
-import dev.rolypolyvole.slimesmp.dragon.util.DragonBomb
+import dev.rolypolyvole.slimesmp.dragon.entities.DragonBomb
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.*

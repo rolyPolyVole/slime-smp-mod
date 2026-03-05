@@ -1,4 +1,4 @@
-package dev.rolypolyvole.slimesmp.dragon.util
+package dev.rolypolyvole.slimesmp.dragon.entities
 
 import com.mojang.math.Transformation
 import net.minecraft.core.particles.ParticleTypes
