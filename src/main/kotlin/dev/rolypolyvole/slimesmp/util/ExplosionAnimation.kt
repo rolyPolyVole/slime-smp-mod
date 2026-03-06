@@ -24,8 +24,6 @@ object ExplosionAnimation {
             entity.dropItem = false
             entity.time = 1
             entity.disableDrop()
-
-            level.addFreshEntity(entity)
         }
     }
 }
