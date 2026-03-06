@@ -12,6 +12,7 @@
         "EnderDragonMixin",
         "EnderManMixin",
         "EndSpikeMixin",
+        "RangedAttributeAccessor",
         "ServerPlayerMixin",
         "SpikeCacheLoaderMixin",
         "ThrownEnderpearlMixin"

@@ -24,9 +24,7 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.dimension.end.EndDragonFight;
 import net.minecraft.world.phys.Vec3;
-import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -49,8 +47,6 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     @Shadow
     protected abstract void reallyHurt(ServerLevel serverLevel, DamageSource damageSource, float f);
 
-    @Shadow
-    private @Nullable EndDragonFight dragonFight;
     @Final @Shadow
     public EnderDragonPart head;
     @Unique
@@ -63,6 +59,9 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     @Unique
     private DragonAbilityManager abilityManager;
 
+    @Unique
+    private long lastPlayerCount = -1;
+
     protected EnderDragonMixin(EntityType<? extends Mob> entityType, Level level) {
         super(entityType, level);
     }
@@ -70,6 +69,9 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(EntityType<? extends EnderDragon> entityType, Level level, CallbackInfo ci) {
         this.setCustomName(Component.literal("Ender Dragon").withStyle(ChatFormatting.LIGHT_PURPLE));
+
+        var maxHealth = ((RangedAttributeAccessor) getAttribute(Attributes.MAX_HEALTH).getAttribute().value());
+        maxHealth.setMaxValue(4096.0);
 
         this.attackManager = new DragonAttackManager(self());
         this.abilityManager = new DragonAbilityManager(self());
@@ -88,11 +90,16 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
             .count();
     }
 
+    @Inject(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/dimension/end/EndDragonFight;updateDragon(Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;)V", shift = At.Shift.BEFORE))
+    private void beforeUpdateDragon(CallbackInfo info) {
+        if (getHealth() <= 1.0F) return;
+        
+        updateMaxHealth();
+    }
+
     @Inject(method = "aiStep()V", at = @At("TAIL"))
     private void tick(CallbackInfo info) {
         if (getHealth() <= 1.0F) return;
-
-        updateMaxHealth();
 
         if (attackManager != null) attackManager.tick();
         if (abilityManager != null) abilityManager.tick();
@@ -105,13 +112,14 @@ abstract class EnderDragonMixin extends Mob implements Enemy {
 
     @Unique
     private void updateMaxHealth() {
-        double playerCount = Math.max(nearbyPlayerCount(), 1);
+        long playerCount = Math.max(nearbyPlayerCount(), 1);
+        if (playerCount == lastPlayerCount) return;
+        this.lastPlayerCount = playerCount;
+
         double newMax = 800.0 + 700 * Math.sqrt(playerCount - 1);
-        double oldMax = this.getMaxHealth();
+        float oldMax = this.getMaxHealth();
+        float healthPercent = this.getHealth() / oldMax;
 
-        if (newMax == oldMax) return;
-
-        float healthPercent = this.getHealth() / (float) oldMax;
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(newMax);
         this.setHealth(healthPercent * (float) newMax);
     }
