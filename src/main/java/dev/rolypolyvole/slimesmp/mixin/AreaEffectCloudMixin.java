@@ -1,0 +1,61 @@
+package dev.rolypolyvole.slimesmp.mixin;
+
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.AreaEffectCloud;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Mixin(AreaEffectCloud.class)
+public abstract class AreaEffectCloudMixin extends Entity {
+
+    @Shadow
+    public abstract LivingEntity getOwner();
+
+    @Shadow
+    public abstract float getRadius();
+
+    protected AreaEffectCloudMixin(EntityType<? extends Monster> entityType, Level level) {
+        super(entityType, level);
+    }
+
+    @Redirect(method = "serverTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getEntitiesOfClass(Ljava/lang/Class;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;"))
+    private <T extends Entity> List<T> filterAndBuffEndermen(Level level, Class<T> entityClass, AABB aabb) {
+        List<T> entities = level.getEntitiesOfClass(entityClass, aabb);
+
+        if (!(this.getOwner() instanceof EnderDragon)) {
+            return entities;
+        }
+
+        float radius = this.getRadius();
+        List<T> filtered = new ArrayList<>();
+
+        for (T entity : entities) {
+            if (entity instanceof EnderMan enderMan) {
+                double dx = enderMan.getX() - this.getX();
+                double dz = enderMan.getZ() - this.getZ();
+                if (dx * dx + dz * dz <= radius * radius) {
+                    enderMan.addEffect(new MobEffectInstance(MobEffects.STRENGTH, 200, 1));
+                    enderMan.addEffect(new MobEffectInstance(MobEffects.SPEED, 200, 1));
+                }
+            } else {
+                filtered.add(entity);
+            }
+        }
+
+        return filtered;
+    }
+}
