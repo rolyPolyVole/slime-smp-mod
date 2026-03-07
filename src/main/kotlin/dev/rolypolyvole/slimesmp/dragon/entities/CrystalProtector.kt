@@ -142,7 +142,11 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
         val distSqr = distanceToSqr(target)
         val enchantments = level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
 
+        val path = navigation.createPath(target, 1)
+        val canReach = path != null && path.canReach()
+
         val desired = when {
+            !canReach -> Items.BOW
             distSqr < 2.0 * 2.0 -> Items.NETHERITE_SWORD
             distSqr < 30.0 * 30.0 -> Items.NETHERITE_SPEAR
             else -> Items.BOW
