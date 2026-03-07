@@ -21,13 +21,13 @@ import kotlin.math.sqrt
 class DragonAbilityManager(private val dragon: EnderDragon) {
     private val level = dragon.level() as ServerLevel
 
-    private var ticks = 0
-    private var ticksUntilCrystalRespawn = crystalRespawnTime()
-    private var ticksUntilHunterSpawn = hunterRespawnTime()
-
     private val crystalLocations = CustomEndSpikes.getCrystalLocations(level)
         .associateWith { 0 }
         .toMutableMap()
+
+    private var ticks = 0
+    private var ticksUntilCrystalRespawn = crystalRespawnTime()
+    private var ticksUntilHunterSpawn = hunterRespawnTime()
 
     private fun crystalRespawnTime(): Int {
         val playerCount = nearbyPlayers().size.coerceAtLeast(1)
