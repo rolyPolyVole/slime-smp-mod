@@ -20,28 +20,9 @@ class BlindnessArrow(
     weapon: ItemStack?
 ) : Arrow(level, shooter, pickupItem, weapon) {
 
-    class PhantomMite(level: Level) : Endermite(EntityType.ENDERMITE, level) {
-
-        init {
-            getAttribute(Attributes.MOVEMENT_SPEED)!!.baseValue = 0.3
-            getAttribute(Attributes.ATTACK_DAMAGE)!!.baseValue = 6.0
-            getAttribute(Attributes.STEP_HEIGHT)!!.baseValue = 1.0
-            getAttribute(Attributes.ATTACK_KNOCKBACK)!!.baseValue = 1.0
-        }
-
-        override fun canBeHitByProjectile(): Boolean = false
-
-        override fun tick() {
-            val vehicle = this.vehicle
-            this.noPhysics = vehicle is Arrow && !vehicle.onGround()
-
-            super.tick()
-        }
-    }
-
     init {
-        if (Math.random() < 0.1) {
-            PhantomMite(level()).startRiding(this)
+        if (Math.random() < 0.2) {
+            PhantomMite(level(), this)
         }
     }
 
@@ -68,8 +49,33 @@ class BlindnessArrow(
 
         target.addEffect(MobEffectInstance(MobEffects.WITHER, 85, 1))
 
-        if (Math.random() < 0.1) {
+        if (Math.random() < 0.2) {
             target.addEffect(MobEffectInstance(MobEffects.DARKNESS, 85, 0))
         }
+    }
+}
+
+class PhantomMite(level: Level, private val arrow: BlindnessArrow) : Endermite(EntityType.ENDERMITE, level) {
+
+    init {
+        getAttribute(Attributes.MOVEMENT_SPEED)!!.baseValue = 0.3
+        getAttribute(Attributes.ATTACK_DAMAGE)!!.baseValue = 6.0
+        getAttribute(Attributes.STEP_HEIGHT)!!.baseValue = 1.0
+        getAttribute(Attributes.ATTACK_KNOCKBACK)!!.baseValue = 1.0
+
+        startRiding(arrow, true, true)
+        level.addFreshEntity(this)
+    }
+
+    override fun shouldBeSaved(): Boolean = false
+    override fun canBeHitByProjectile(): Boolean = false
+
+    override fun tick() {
+        this.noPhysics = arrow.isAlive && arrow.deltaMovement.lengthSqr() != 0.0
+
+        if (noPhysics) this.deltaMovement = arrow.deltaMovement.normalize()
+        else stopRiding()
+
+        super.tick()
     }
 }

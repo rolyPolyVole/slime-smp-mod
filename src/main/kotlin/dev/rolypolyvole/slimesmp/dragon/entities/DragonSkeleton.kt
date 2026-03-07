@@ -7,11 +7,12 @@ import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.ai.goal.SpearUseGoal
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.monster.skeleton.Skeleton
-import net.minecraft.world.entity.projectile.Projectile
 import net.minecraft.world.entity.projectile.ProjectileUtil
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.Level
+import net.minecraft.world.phys.Vec3
+import kotlin.math.pow
 import kotlin.math.sqrt
 
 open class DragonSkeleton(level: Level) : Skeleton(EntityType.SKELETON, level) {
@@ -27,7 +28,9 @@ open class DragonSkeleton(level: Level) : Skeleton(EntityType.SKELETON, level) {
     override fun aiStep() {
         super.aiStep()
 
-        val target = level().getNearestPlayer(this, 128.0) ?: return
+        if (this.vehicle == null) return
+
+        val target = this.target ?: return
         lookAt(target, 360f, 360f)
 
         this.yBodyRot = this.yRot
@@ -51,21 +54,34 @@ open class DragonSkeleton(level: Level) : Skeleton(EntityType.SKELETON, level) {
         val arrow = BlindnessArrow(this.level(), this, ItemStack(Items.ARROW), bow)
 
         val dx = target.x - this.x
-        val dy = target.getY(0.3333333333333333) - arrow.y
+        val dy = target.eyeY - arrow.y
         val dz = target.z - this.z
-        val horizontalDist = sqrt(dx * dx + dz * dz)
 
         val level = this.level()
         if (level is ServerLevel) {
-            val gravityCompensation = horizontalDist * 0.2 + dy.coerceAtLeast(0.0) * 0.15
-
-            Projectile.spawnProjectileUsingShoot(
-                arrow, level, ItemStack(Items.ARROW),
-                dx, dy + gravityCompensation, dz,
-                3.0F, 0.0F
-            )
+            arrow.deltaMovement = computeExactVelocity(dx, dy, dz, 3.0)
+            level.addFreshEntity(arrow)
         }
 
         this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.random.nextFloat() * 0.4F + 0.8F))
+    }
+
+    private fun computeExactVelocity(dx: Double, dy: Double, dz: Double, maxSpeed: Double): Vec3 {
+        val drag = 0.99
+        val gravity = 0.05
+
+        for (n in 1..200) {
+            val s = (1.0 - drag.pow(n)) / (1.0 - drag)
+            val vx = dx / s
+            val vz = dz / s
+            val vy = (dy + gravity / (1.0 - drag) * (n - s)) / s
+            val v = sqrt(vx * vx + vy * vy + vz * vz)
+            if (v <= maxSpeed) {
+                return Vec3(vx, vy, vz)
+            }
+        }
+
+        val s = (1.0 - drag.pow(1)) / (1.0 - drag)
+        return Vec3(dx / s, (dy + gravity / (1.0 - drag) * (1 - s)) / s, dz / s)
     }
 }

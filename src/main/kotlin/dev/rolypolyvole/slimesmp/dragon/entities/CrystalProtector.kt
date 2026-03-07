@@ -1,5 +1,6 @@
 package dev.rolypolyvole.slimesmp.dragon.entities
 
+import dev.rolypolyvole.slimesmp.util.standingBlockPos
 import net.minecraft.ChatFormatting
 import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.Registries
@@ -7,7 +8,6 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.world.InteractionResult
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.EquipmentSlot
@@ -16,7 +16,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.animal.equine.Horse
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
-import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.DyeColor
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
@@ -35,13 +34,15 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
 
     private var orbitCrystal: EndCrystal? = null
     private var horse: CrystalProtectorHorse? = null
+    private var outOfReachTicks = 0
 
     init {
         getAttribute(Attributes.MAX_HEALTH)?.baseValue = 40.0
         getAttribute(Attributes.STEP_HEIGHT)?.baseValue = 3.0
         getAttribute(Attributes.FOLLOW_RANGE)?.baseValue = 96.0
         getAttribute(Attributes.SCALE)?.baseValue = 1.2
-        getAttribute(Attributes.MOVEMENT_SPEED)!!.baseValue = 0.32
+        getAttribute(Attributes.MOVEMENT_SPEED)?.baseValue = 0.32
+        getAttribute(Attributes.SAFE_FALL_DISTANCE)?.baseValue = 100.0
 
         this.health = maxHealth
 
@@ -143,16 +144,21 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
         super.tick()
     }
 
+    override fun getMaxFallDistance(): Int = Int.MAX_VALUE
+
     private fun swapWeapon() {
         val target = this.target ?: return
         val distSqr = distanceToSqr(target)
         val enchantments = level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
 
-        val path = navigation.createPath(target, 1)
+        val standingPos = target.standingBlockPos()
+        val path = navigation.createPath(standingPos, 0)
         val canReach = path != null && path.canReach()
 
+        if (canReach) outOfReachTicks = 0 else outOfReachTicks++
+
         val desired = when {
-            !canReach -> Items.BOW
+            outOfReachTicks >= 20 -> Items.BOW
             distSqr < 2.0 * 2.0 -> Items.NETHERITE_SWORD
             distSqr < 30.0 * 30.0 -> Items.NETHERITE_SPEAR
             else -> Items.BOW
@@ -241,6 +247,7 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
             getAttribute(Attributes.MAX_HEALTH)?.baseValue = 70.0
             getAttribute(Attributes.KNOCKBACK_RESISTANCE)?.baseValue = 0.9
             getAttribute(Attributes.SCALE)?.baseValue = 1.2
+            getAttribute(Attributes.SAFE_FALL_DISTANCE)?.baseValue = 100.0
 
             health = maxHealth
 
