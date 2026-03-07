@@ -6,6 +6,7 @@ import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.EquipmentSlot
@@ -25,6 +26,7 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.entity.BannerPatternLayers
 import net.minecraft.world.level.block.entity.BannerPatterns
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 class CrystalProtector(level: Level) : DragonSkeleton(level) {
@@ -189,6 +191,20 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
         val serverLevel = level() as? ServerLevel ?: return
         val packet = ClientboundEntityPositionSyncPacket.of(crystal)
         serverLevel.chunkSource.sendToTrackingPlayers(crystal, packet)
+    }
+
+    override fun hurtServer(serverLevel: ServerLevel, damageSource: DamageSource, amount: Float): Boolean {
+        val result = super.hurtServer(serverLevel, damageSource, amount)
+
+        if (result && damageSource.entity is ServerPlayer) {
+            val player = damageSource.entity as ServerPlayer
+            val health = health.roundToInt()
+            val message = Component.literal("❤ Protector Health: $health").withStyle(ChatFormatting.DARK_RED)
+
+            player.sendSystemMessage(message, true)
+        }
+
+        return result
     }
 
     override fun remove(reason: RemovalReason) {
