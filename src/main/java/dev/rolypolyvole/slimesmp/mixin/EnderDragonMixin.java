@@ -190,7 +190,7 @@ public abstract class EnderDragonMixin extends Mob implements Enemy {
             : adjusted;
 
         if (source.is(DamageTypeTags.IS_EXPLOSION) && phaseManager.getCurrentPhase().getPhase() == EnderDragonPhase.LANDING) {
-            finalDamage *= 0.1F;
+            finalDamage *= 0.2F;
         }
 
         this.reallyHurt(serverLevel, source, finalDamage);
