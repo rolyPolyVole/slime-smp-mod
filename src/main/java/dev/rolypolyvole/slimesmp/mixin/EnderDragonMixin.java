@@ -220,7 +220,7 @@ public abstract class EnderDragonMixin extends Mob implements Enemy {
         double playerCount = Math.max(nearbyPlayerCount(), 1);
         int threshold = (int) (300 + 900 / Math.sqrt(playerCount));
 
-        return ticksSinceLastHurt > threshold ? 8.0F : 1.2F;
+        return ticksSinceLastHurt > threshold ? getMaxHealth() * 0.01F : 1.2F;
     }
 
     @Redirect(method = "aiStep()V", at = @At(value = "FIELD", target = "Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;hurtTime:I", opcode = Opcodes.GETFIELD), require = 1)
