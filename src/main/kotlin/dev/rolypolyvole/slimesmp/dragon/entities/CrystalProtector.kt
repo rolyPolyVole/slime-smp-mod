@@ -163,6 +163,7 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
             }
             else -> ItemStack(desired).apply {
                 enchant(enchantments.getOrThrow(Enchantments.POWER), 3)
+                enchant(enchantments.getOrThrow(Enchantments.PUNCH), 1)
             }
         })
     }
