@@ -7,6 +7,7 @@ import net.minecraft.network.chat.Component
 import net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.InteractionResult
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.EquipmentSlot
@@ -15,6 +16,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.animal.equine.Horse
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.DyeColor
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
@@ -232,6 +234,8 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
 
     class CrystalProtectorHorse(level: Level) : Horse(EntityType.HORSE, level) {
 
+        private var canStand: Boolean = true
+
         init {
             getAttribute(Attributes.STEP_HEIGHT)?.baseValue = 3.0
             getAttribute(Attributes.MAX_HEALTH)?.baseValue = 70.0
@@ -260,5 +264,18 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
 
             super.tick()
         }
+
+        override fun fedFood(player: Player, itemStack: ItemStack): InteractionResult {
+            return InteractionResult.PASS
+        }
+
+        override fun hurtServer(serverLevel: ServerLevel, damageSource: DamageSource, f: Float): Boolean {
+            this.canStand = false
+            val result = super.hurtServer(serverLevel, damageSource, f)
+            this.canStand = true
+            return result
+        }
+
+        override fun canPerformRearing(): Boolean = canStand
     }
 }
