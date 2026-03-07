@@ -9,6 +9,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -185,6 +186,13 @@ public abstract class EnderDragonMixin extends Mob implements Enemy {
             : adjusted;
 
         this.reallyHurt(serverLevel, source, finalDamage);
+
+        if (source.getEntity() instanceof ServerPlayer player) {
+            int health = Math.round(this.getHealth());
+            Component message = Component.literal("❤ Dragon Health: " + health).withStyle(ChatFormatting.RED);
+
+            player.sendSystemMessage(message, true);
+        }
     }
 
     @ModifyConstant(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z", constant = @Constant(floatValue = 0.25F))
