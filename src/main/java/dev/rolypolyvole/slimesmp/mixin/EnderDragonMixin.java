@@ -72,6 +72,8 @@ public abstract class EnderDragonMixin extends Mob implements Enemy {
         var maxHealth = ((RangedAttributeAccessor) getAttribute(Attributes.MAX_HEALTH).getAttribute().value());
         maxHealth.setMaxValue(4096.0);
 
+        getAttribute(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE).setBaseValue(1.0);
+
         this.attackManager = new DragonAttackManager(self());
         this.abilityManager = new DragonAbilityManager(self());
     }
