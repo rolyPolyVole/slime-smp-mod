@@ -6,6 +6,7 @@ import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
 import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
+import net.minecraft.server.permissions.Permissions
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
@@ -20,6 +21,7 @@ class GearUpCommand {
 
             val command = Commands
                 .literal(name)
+                .requires { it.permissions().hasPermission(Permissions.COMMANDS_ADMIN) }
                 .executes(this::onExecution)
 
             dispatcher.register(command)
