@@ -51,6 +51,8 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
 
     override fun shouldBeSaved(): Boolean = false
 
+    fun hasCrystal(): Boolean = orbitCrystal != null && orbitCrystal!!.isAlive
+
     fun spawnWithMount(serverLevel: ServerLevel) {
         serverLevel.addFreshEntity(this)
 
@@ -199,7 +201,7 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
         if (result && damageSource.entity is ServerPlayer) {
             val player = damageSource.entity as ServerPlayer
             val health = health.roundToInt()
-            val message = Component.literal("❤ Protector Health: $health").withStyle(ChatFormatting.DARK_RED)
+            val message = Component.literal("❤ Protector Health: $health").withStyle(ChatFormatting.DARK_AQUA)
 
             player.sendSystemMessage(message, true)
         }

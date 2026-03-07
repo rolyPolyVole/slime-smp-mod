@@ -136,14 +136,17 @@ class DragonAbilityManager(private val dragon: EnderDragon) {
         return !level.getEntitiesOfClass(EndCrystal::class.java, aabb).isEmpty()
     }
 
-    private fun getAliveProtectors(): Int {
+    private fun getAliveProtectorCrystals(): Int {
         val center = dragon.fightOrigin.center
         val aabb = AABB.ofSize(center, 400.0, 400.0, 400.0)
-        return level.getEntitiesOfClass(CrystalProtector::class.java, aabb).size
+
+        return level
+            .getEntitiesOfClass(CrystalProtector::class.java, aabb)
+            .filter(CrystalProtector::hasCrystal).size
     }
 
     private fun getTotalCrystals(): Int {
-        return crystalLocations.keys.filter(::doesCrystalExist).size + getAliveProtectors()
+        return crystalLocations.keys.filter(::doesCrystalExist).size + getAliveProtectorCrystals()
     }
 
     fun onCrystalDestroyed(pos: BlockPos) {
