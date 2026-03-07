@@ -265,10 +265,6 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
             super.tick()
         }
 
-        override fun fedFood(player: Player, itemStack: ItemStack): InteractionResult {
-            return InteractionResult.PASS
-        }
-
         override fun hurtServer(serverLevel: ServerLevel, damageSource: DamageSource, f: Float): Boolean {
             this.canStand = false
             val result = super.hurtServer(serverLevel, damageSource, f)
