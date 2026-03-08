@@ -37,6 +37,7 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
     private var roarTicks = 0
     private var ticks = 0
 
+    private val minTargets = ceil(sqrt(nearbyPlayers().size.toDouble()))
     private var ticksUntilChangeTarget = 0
     private var target: ServerPlayer? = null
 
@@ -67,7 +68,7 @@ class FireballAttack(dragon: EnderDragon) : AbstractDragonAttack(dragon) {
         if (ticksUntilChangeTarget > 0) {
             this.ticksUntilChangeTarget--
         } else {
-            if (random < (targeted / (targeted + 3.0))) {
+            if (targeted > minTargets && random < (targeted / (targeted + 3.0))) {
                 this.shouldEnd = true
                 return
             }
