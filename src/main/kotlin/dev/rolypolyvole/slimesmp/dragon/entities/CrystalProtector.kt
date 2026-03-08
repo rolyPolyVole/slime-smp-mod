@@ -79,11 +79,11 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
         serverLevel.addFreshEntity(crystal)
         this.orbitCrystal = crystal
 
-        equipArmor(serverLevel)
+        equipArmor()
     }
 
-    private fun equipArmor(level: ServerLevel) {
-        val registryAccess = level.registryAccess()
+    fun equipArmor() {
+        val registryAccess = level().registryAccess()
 
         val trimPatterns = registryAccess.lookupOrThrow(Registries.TRIM_PATTERN)
         val trimMaterials = registryAccess.lookupOrThrow(Registries.TRIM_MATERIAL)
@@ -142,6 +142,18 @@ class CrystalProtector(level: Level) : DragonSkeleton(level) {
         updateOrbitCrystal()
         swapWeapon()
         super.tick()
+    }
+
+    override fun aiStep() {
+        super.aiStep()
+
+        if (vehicle is EndCrystal) {
+            val target = this.target ?: return
+
+            if (distanceToSqr(target) < 20.0 * 20.0) {
+                stopRiding()
+            }
+        }
     }
 
     override fun getMaxFallDistance(): Int = Int.MAX_VALUE

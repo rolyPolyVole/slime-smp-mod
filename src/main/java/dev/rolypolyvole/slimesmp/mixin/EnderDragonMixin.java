@@ -112,14 +112,17 @@ public abstract class EnderDragonMixin extends Mob implements Enemy {
     private void tick(CallbackInfo info) {
         if (getHealth() <= 1.0F) return;
 
-        if (nearestCrystal != null) nearestCrystal.setBeamTarget(self().blockPosition());
-
-        if (attackManager != null) attackManager.tick();
         if (abilityManager != null) abilityManager.tick();
+        if (attackManager != null && !abilityManager.getRageAbility().isActive()) attackManager.tick();
     }
 
     @Inject(method = "aiStep()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V", shift = At.Shift.BEFORE))
     private void beforeMove(CallbackInfo info) {
+        if (abilityManager != null && abilityManager.getRageAbility().isActive()) {
+            abilityManager.getRageAbility().onBeforeMove();
+            return;
+        }
+
         if (attackManager != null && getHealth() > 1.0F) attackManager.onBeforeMove();
     }
 
@@ -182,8 +185,13 @@ public abstract class EnderDragonMixin extends Mob implements Enemy {
         info.cancel();
     }
 
-    @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z", at = @At("HEAD"))
+    @Inject(method = "hurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/boss/enderdragon/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z", at = @At("HEAD"), cancellable = true)
     private void storeDamageData(ServerLevel level, EnderDragonPart part, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        if (abilityManager != null && abilityManager.getRageAbility().isActive()) {
+            cir.setReturnValue(false);
+            return;
+        }
+
         this.hitPart = part;
         this.damageReceived = amount;
     }
@@ -283,8 +291,8 @@ public abstract class EnderDragonMixin extends Mob implements Enemy {
     @Inject(method = "onCrystalDestroyed", at = @At("TAIL"))
     private void onCrystalDestroyed(ServerLevel serverLevel, EndCrystal endCrystal, BlockPos blockPos, DamageSource damageSource, CallbackInfo ci) {
         if (abilityManager != null) {
-            abilityManager.onCrystalDestroyed(blockPos);
-            abilityManager.sendCrystalCount();
+            abilityManager.getCrystalRespawnAbility().onCrystalDestroyed(blockPos);
+            abilityManager.getCrystalRespawnAbility().sendCrystalCount();
         }
     }
 }
