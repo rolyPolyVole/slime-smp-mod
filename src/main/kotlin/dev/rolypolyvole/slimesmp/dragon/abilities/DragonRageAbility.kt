@@ -16,6 +16,7 @@ import net.minecraft.world.entity.boss.enderdragon.EndCrystal
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase
 import net.minecraft.world.entity.item.FallingBlockEntity
+import net.minecraft.world.entity.monster.skeleton.Skeleton
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.state.BlockState
@@ -37,6 +38,7 @@ class DragonRageAbility(
 
     private var stateTicks = 0
     private var hasPerformed = false
+    private var firstTick = true
 
     private val level = this.dragon.level() as ServerLevel
     private val center get() = Vec3(0.0, 128.0, 0.0)
@@ -79,6 +81,16 @@ class DragonRageAbility(
     }
 
     private fun checkTrigger() {
+        if (this.firstTick) {
+            this.firstTick = false
+
+            if (this.dragon.health <= this.dragon.maxHealth * 0.5f) {
+                this.hasPerformed = true
+            }
+
+            return
+        }
+
         if (this.hasPerformed) return
 
         if (this.dragon.health <= this.dragon.maxHealth * 0.5f) {
@@ -103,6 +115,10 @@ class DragonRageAbility(
         this.stateTicks++
 
         this.dragon.phaseManager.setPhase(EnderDragonPhase.HOVERING)
+
+        if (this.stateTicks <= 20) {
+            this.manager.broadcastSound(SoundEvents.ENDER_DRAGON_GROWL, 2.0F, 1.5f - this.stateTicks * 0.05f)
+        }
 
         val angle = this.stateTicks * 0.3
         val radius = 3.0
@@ -180,8 +196,6 @@ class DragonRageAbility(
             falling.deltaMovement = direction
                 .scale(speed)
                 .add(0.0, 0.5 + this.level.random.nextDouble(), 0.0)
-
-            this.level.addFreshEntity(falling)
         }
 
         this.floatingBlocks.clear()
@@ -204,7 +218,7 @@ class DragonRageAbility(
         this.dragon.phaseManager.setPhase(EnderDragonPhase.HOVERING)
 
         if (this.stateTicks <= 20) {
-            this.manager.broadcastSound(SoundEvents.ENDER_DRAGON_GROWL, pitch = 0.5f + this.stateTicks * 0.05f)
+            this.manager.broadcastSound(SoundEvents.ENDER_DRAGON_GROWL, 2.0F, 0.5f + this.stateTicks * 0.05f)
         }
 
         if (this.stateTicks == 20) {
@@ -238,9 +252,11 @@ class DragonRageAbility(
         val random = this.level.random
 
         repeat(150) {
+            val num = random.nextFloat()
+
             val state = when {
-                random.nextFloat() < 0.8f -> Blocks.END_STONE.defaultBlockState()
-                random.nextFloat() < 0.50f -> Blocks.OBSIDIAN.defaultBlockState()
+                num > 0.35f -> Blocks.END_STONE.defaultBlockState()
+                num > 0.175f -> Blocks.OBSIDIAN.defaultBlockState()
                 else -> Blocks.CRYING_OBSIDIAN.defaultBlockState()
             }
 
@@ -271,6 +287,13 @@ class DragonRageAbility(
             )
 
             existing.forEach { it.discard() }
+
+            val protectors = this.level.getEntitiesOfClass(
+                Skeleton::class.java,
+                AABB.ofSize(pos, 3.0, 3.0, 3.0)
+            )
+
+            protectors.forEach { it.discard() }
 
             val crystal = EntityType.END_CRYSTAL.create(this.level, EntitySpawnReason.EVENT) ?: continue
             crystal.setPos(pos)
