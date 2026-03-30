@@ -3,20 +3,7 @@
     "minVersion": "0.8",
     "package": "dev.rolypolyvole.slimesmp.mixin",
     "compatibilityLevel": "JAVA_21",
-    "mixins": [
-        "AreaEffectCloudMixin",
-        "DragonHoldingPatternPhaseMixin",
-        "DragonStrafePlayerPhaseMixin",
-        "EndCrystalMixin",
-        "EndDragonFightMixin",
-        "EnderDragonMixin",
-        "EnderManMixin",
-        "EndSpikeMixin",
-        "RangedAttributeAccessor",
-        "ServerPlayerMixin",
-        "SpikeCacheLoaderMixin",
-        "ThrownEnderpearlMixin"
-    ],
+    "mixins": [],
     "injectors": {
         "defaultRequire": 1
     },
