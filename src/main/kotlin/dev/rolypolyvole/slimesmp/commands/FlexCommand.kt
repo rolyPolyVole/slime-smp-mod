@@ -5,13 +5,11 @@ import dev.rolypolyvole.slimesmp.SlimeSMPMod.Companion.mm
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
-import net.minecraft.network.protocol.common.ClientboundTransferPacket
+import net.minecraft.network.chat.HoverEvent
+import net.minecraft.network.chat.Style
 
-class LavaRisingCommand {
-    private val name = "lavarising"
-
-    private val host = "192.168.1.50"
-    private val port = 25565
+class FlexCommand {
+    private val name = "flex"
 
     fun register() {
         CommandRegistrationCallback.EVENT.register { dispatcher, registryAccess, environment ->
@@ -28,18 +26,29 @@ class LavaRisingCommand {
     private fun onExecution(context: CommandContext<CommandSourceStack>): Int {
         val source = context.source
         val player = source.playerOrException
+        val item = player.mainHandItem
 
-        if (source.textName.startsWith(".")) {
-            source.sendFailure(mm("<red>Lava Rising does not support Bedrock yet.</red>"))
+        if (item.isEmpty) {
+            player.sendSystemMessage(
+                mm("<red>You're not holding anything!</red>")
+            )
+
             return 0
         }
 
-        source.sendSuccess(
-            { mm("<green>Sending you to Lava Rising!</green>") },
-            false
+        val itemName = item.displayName.copy().withStyle(
+            Style.EMPTY.withHoverEvent(HoverEvent.ShowItem(item))
         )
 
-        player.connection.send(ClientboundTransferPacket(host, port))
+        val prefix = mm("<gray>${player.gameProfile.name} is holding </gray>")
+        val suffix = mm("<gray> x${item.count}!</gray>")
+
+        val message = net.minecraft.network.chat.Component.empty()
+            .append(prefix)
+            .append(itemName)
+            .append(suffix)
+
+        source.server.playerList.broadcastSystemMessage(message, false)
 
         return 1
     }

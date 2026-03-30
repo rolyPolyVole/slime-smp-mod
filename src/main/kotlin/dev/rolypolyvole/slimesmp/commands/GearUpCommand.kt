@@ -1,11 +1,11 @@
 package dev.rolypolyvole.slimesmp.commands
 
 import com.mojang.brigadier.context.CommandContext
+import dev.rolypolyvole.slimesmp.SlimeSMPMod.Companion.mm
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
 import net.minecraft.core.registries.Registries
-import net.minecraft.network.chat.Component
 import net.minecraft.server.permissions.Permissions
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.ItemStack
@@ -38,12 +38,15 @@ class GearUpCommand {
         val helmet = ItemStack(Items.NETHERITE_HELMET).apply {
             enchant(enchantments.getOrThrow(Enchantments.PROTECTION), 4)
         }
+
         val chestplate = ItemStack(Items.NETHERITE_CHESTPLATE).apply {
             enchant(enchantments.getOrThrow(Enchantments.PROTECTION), 4)
         }
+
         val leggings = ItemStack(Items.NETHERITE_LEGGINGS).apply {
             enchant(enchantments.getOrThrow(Enchantments.PROTECTION), 4)
         }
+
         val boots = ItemStack(Items.NETHERITE_BOOTS).apply {
             enchant(enchantments.getOrThrow(Enchantments.PROTECTION), 4)
             enchant(enchantments.getOrThrow(Enchantments.FEATHER_FALLING), 4)
@@ -58,9 +61,11 @@ class GearUpCommand {
             enchant(enchantments.getOrThrow(Enchantments.SHARPNESS), 5)
             enchant(enchantments.getOrThrow(Enchantments.LOOTING), 3)
         }
+
         val bow = ItemStack(Items.BOW).apply {
             enchant(enchantments.getOrThrow(Enchantments.POWER), 5)
         }
+
         val mace = ItemStack(Items.MACE).apply {
             enchant(enchantments.getOrThrow(Enchantments.DENSITY), 5)
             enchant(enchantments.getOrThrow(Enchantments.WIND_BURST), 3)
@@ -88,7 +93,10 @@ class GearUpCommand {
         player.inventory.add(ItemStack(Items.ENDER_PEARL, 16))
         player.inventory.add(ItemStack(Items.WIND_CHARGE, 64))
 
-        source.sendSuccess({ Component.literal("You have been given maxed gear!").withColor(0x55FF55) }, false)
+        source.sendSuccess(
+            { mm("<green>You have been given maxed gear!</green>") },
+            false
+        )
 
         return 1
     }
