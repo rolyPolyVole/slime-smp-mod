@@ -1,7 +1,6 @@
 package dev.rolypolyvole.slimesmp
 
 import dev.rolypolyvole.slimesmp.commands.FlexCommand
-import dev.rolypolyvole.slimesmp.commands.GearUpCommand
 import dev.rolypolyvole.slimesmp.commands.LavaRisingCommand
 import net.fabricmc.api.DedicatedServerModInitializer
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
@@ -18,7 +17,6 @@ class SlimeSMPMod : DedicatedServerModInitializer {
         ServerLifecycleEvents.SERVER_STOPPED.register { adventure = null }
 
         LavaRisingCommand().register()
-        GearUpCommand().register()
         FlexCommand().register()
     }
 
