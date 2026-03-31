@@ -53,7 +53,7 @@ class FlexCommand {
         cooldowns[player.uuid] = now
 
         val playerName = Component.literal(player.gameProfile.name)
-            .withStyle(Style.EMPTY.withColor(0xFFFF55).withHoverEvent(
+            .withStyle(Style.EMPTY.withColor(0x55FF55).withHoverEvent(
                 HoverEvent.ShowEntity(
                     HoverEvent.EntityTooltipInfo(EntityType.PLAYER, player.uuid, player.displayName)
                 )
@@ -76,9 +76,9 @@ class FlexCommand {
             .append(playerName)
             .append(mm("<gold> is flexing their </gold>"))
             .append(count)
-            .append(mm("<dark_gray>[</dark_gray>"))
+            .append(mm("<dark_gray><b>[</b></dark_gray>"))
             .append(itemName)
-            .append(mm("<dark_gray>]</dark_gray>"))
+            .append(mm("<dark_gray><b>]</b></dark_gray>"))
 
         source.server.playerList.broadcastSystemMessage(message, false)
 
