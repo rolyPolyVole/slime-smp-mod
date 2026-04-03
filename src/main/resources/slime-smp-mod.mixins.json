@@ -4,7 +4,9 @@
     "package": "dev.rolypolyvole.slimesmp.mixin",
     "compatibilityLevel": "JAVA_21",
     "mixins": [
-        "HappyGhastMixin"
+        "HappyGhastMixin",
+        "SnowGolemMixin",
+        "SnowballMixin"
     ],
     "injectors": {
         "defaultRequire": 1
