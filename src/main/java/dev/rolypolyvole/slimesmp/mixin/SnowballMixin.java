@@ -33,5 +33,9 @@ public abstract class SnowballMixin extends ThrowableItemProjectile {
         }
 
         entity.hurt(this.damageSources().thrown(this, this.getOwner()), damage);
+
+        if (this.isOnFire()) {
+            entity.setRemainingFireTicks(100);
+        }
     }
 }
