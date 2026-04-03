@@ -15,6 +15,6 @@ public abstract class SnowGolemMixin {
             at = @At(value = "NEW", target = "net/minecraft/world/entity/ai/goal/RangedAttackGoal")
     )
     private RangedAttackGoal fasterAttackGoal(RangedAttackMob mob, double speed, int interval, float range) {
-        return new RangedAttackGoal(mob, speed, 2, range);
+        return new RangedAttackGoal(mob, speed, 2, (int) (range * 1.5));
     }
 }
