@@ -2,6 +2,7 @@ package dev.rolypolyvole.slimesmp
 
 import dev.rolypolyvole.slimesmp.commands.FlexCommand
 import dev.rolypolyvole.slimesmp.commands.LavaRisingCommand
+import dev.rolypolyvole.slimesmp.events.RuinedPortalLootEvent
 import net.fabricmc.api.DedicatedServerModInitializer
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.kyori.adventure.platform.modcommon.MinecraftServerAudiences
@@ -15,6 +16,8 @@ class SlimeSMPMod : DedicatedServerModInitializer {
 
         ServerLifecycleEvents.SERVER_STARTING.register { adventure = MinecraftServerAudiences.of(it) }
         ServerLifecycleEvents.SERVER_STOPPED.register { adventure = null }
+
+        RuinedPortalLootEvent().register()
 
         LavaRisingCommand().register()
         FlexCommand().register()
