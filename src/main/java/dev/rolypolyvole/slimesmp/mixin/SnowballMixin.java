@@ -29,7 +29,7 @@ public abstract class SnowballMixin extends ThrowableItemProjectile {
         float damage = entity instanceof Blaze ? 3.0F : 0.0F;
 
         if (owner != null && owner.getEntity(level(), Entity.class) instanceof SnowGolem) {
-            damage += 1.0F;
+            damage += 1.5F;
         }
 
         entity.hurt(this.damageSources().thrown(this, this.getOwner()), damage);
