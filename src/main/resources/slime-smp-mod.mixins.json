@@ -6,7 +6,9 @@
     "mixins": [
         "HappyGhastMixin",
         "LivingEntityMixin",
+        "MobMixin",
         "RabbitMixin",
+        "SlimeMixin",
         "SnowballMixin",
         "SnowGolemMixin"
     ],
