@@ -10,7 +10,8 @@
         "RabbitMixin",
         "SlimeMixin",
         "SnowballMixin",
-        "SnowGolemMixin"
+        "SnowGolemMixin",
+        "ZombieVillagerMixin"
     ],
     "injectors": {
         "defaultRequire": 1
