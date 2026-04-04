@@ -4,6 +4,7 @@
     "package": "dev.rolypolyvole.slimesmp.mixin",
     "compatibilityLevel": "JAVA_21",
     "mixins": [
+        "AbstractBoatMixin",
         "HappyGhastMixin",
         "LivingEntityMixin",
         "MobMixin",
