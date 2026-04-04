@@ -24,7 +24,11 @@ public abstract class SnowballMixin extends ThrowableItemProjectile {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;hurt(Lnet/minecraft/world/damagesource/DamageSource;F)V")
     )
     private void damageOnHit(Entity entity, DamageSource source, float amount) {
-        if (entity instanceof SnowGolem) return;
+        if (entity instanceof SnowGolem golem) {
+            golem.setHealth(golem.getHealth() + 1.0F);
+
+            return;
+        }
 
         float damage = entity instanceof Blaze ? 3.0F : 0.0F;
 
